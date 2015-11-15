@@ -20,7 +20,7 @@ There are very few dependencies because that would complicate the build system.
 There are, however, a few dependencies that are important or simple enough to
 allow:
  * easy_* libraries (see https://github.com/mackron)
- * Lua
+ * Lua 5.1
  * stb libraries
    * stb_image
    * stb_image_write
