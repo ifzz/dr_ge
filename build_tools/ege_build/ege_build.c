@@ -1,7 +1,7 @@
-#include "../../include/external/easy_util/easy_util.h"
-#include "../../include/external/easy_path/easy_path.h"
-#include "../../include/external/easy_fs/easy_vfs.h"
-#include "../../include/external/gb_string.h"
+#include "../../include/easy_ge/external/easy_util/easy_util.h"
+#include "../../include/easy_ge/external/easy_path/easy_path.h"
+#include "../../include/easy_ge/external/easy_fs/easy_vfs.h"
+#include "../../include/easy_ge/external/gb_string.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
