@@ -1,0 +1,1 @@
+ege_build --noprebuild --nopostbuild --compiler gcc --target debug

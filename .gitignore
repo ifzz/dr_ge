@@ -1,0 +1,10 @@
+bin/ege*
+bin/data/
+build/vc14/
+build/ege_build.ilk
+build/ege_build.iobj
+build/ege_build.ipdb
+build/ege_build.pdb
+docs/private/
+lib/
+tests/

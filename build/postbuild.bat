@@ -1,0 +1,1 @@
+ege_build --postbuild
