@@ -304,7 +304,7 @@ typedef bool easyutil_cmdline_parse_proc(const char* key, const char* value, voi
 bool easyutil_init_cmdline(easyutil_cmdline* pCmdLine, int argc, char** argv);
 
 /// Initializes a command line object using a Win32 style command line.
-bool easyutil_init_cmdline_win32(easyutil_cmdline* pCmdLine, char* args);
+bool easyutil_init_cmdline_win32(easyutil_cmdline* pCmdLine, const char* args);
 
 /// Parses the given command line.
 void easyutil_parse_cmdline(easyutil_cmdline* pCmdLine, easyutil_cmdline_parse_proc callback, void* pUserData);
