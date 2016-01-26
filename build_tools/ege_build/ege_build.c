@@ -90,41 +90,41 @@ void prebuild(ege_build_context* pContext)
     printf("--- Performing Pre-Build Step ---\n");
     printf("1) Adding external dependencies to source tree...\n");
     {
-        copy_and_log_file(pContext, "../../easy_audio/easy_audio.h", "../include/external/easy_audio/easy_audio.h");
+        copy_and_log_file(pContext, "../../easy_audio/easy_audio.h", "../include/easy_ge/external/easy_audio/easy_audio.h");
         copy_and_log_file(pContext, "../../easy_audio/easy_audio.h", "../source/external/easy_audio/easy_audio.h");
         copy_and_log_file(pContext, "../../easy_audio/easy_audio.c", "../source/external/easy_audio/easy_audio.c");
 
-        copy_and_log_file(pContext, "../../easy_draw/easy_draw.h", "../include/external/easy_draw/easy_draw.h");
+        copy_and_log_file(pContext, "../../easy_draw/easy_draw.h", "../include/easy_ge/external/easy_draw/easy_draw.h");
         copy_and_log_file(pContext, "../../easy_draw/easy_draw.h", "../source/external/easy_draw/easy_draw.h");
         copy_and_log_file(pContext, "../../easy_draw/easy_draw.c", "../source/external/easy_draw/easy_draw.c");
-        copy_and_log_file(pContext, "../../easy_draw/easy_mtl.h", "../include/external/easy_draw/easy_mtl.h");
+        copy_and_log_file(pContext, "../../easy_draw/easy_mtl.h", "../include/easy_ge/external/easy_draw/easy_mtl.h");
         copy_and_log_file(pContext, "../../easy_draw/easy_mtl.h", "../source/external/easy_draw/easy_mtl.h");
         copy_and_log_file(pContext, "../../easy_draw/easy_mtl.c", "../source/external/easy_draw/easy_mtl.c");
 
-        copy_and_log_file(pContext, "../../easy_fs/easy_fsw.h", "../include/external/easy_fs/easy_fsw.h");
+        copy_and_log_file(pContext, "../../easy_fs/easy_fsw.h", "../include/easy_ge/external/easy_fs/easy_fsw.h");
         copy_and_log_file(pContext, "../../easy_fs/easy_fsw.h", "../source/external/easy_fs/easy_fsw.h");
         copy_and_log_file(pContext, "../../easy_fs/easy_fsw.c", "../source/external/easy_fs/easy_fsw.c");
-        copy_and_log_file(pContext, "../../easy_fs/easy_vfs.h", "../include/external/easy_fs/easy_vfs.h");
+        copy_and_log_file(pContext, "../../easy_fs/easy_vfs.h", "../include/easy_ge/external/easy_fs/easy_vfs.h");
         copy_and_log_file(pContext, "../../easy_fs/easy_vfs.h", "../source/external/easy_fs/easy_vfs.h");
         copy_and_log_file(pContext, "../../easy_fs/easy_vfs.c", "../source/external/easy_fs/easy_vfs.c");
 
-        copy_and_log_file(pContext, "../../easy_gui/easy_gui.h", "../include/external/easy_gui/easy_gui.h");
+        copy_and_log_file(pContext, "../../easy_gui/easy_gui.h", "../include/easy_ge/external/easy_gui/easy_gui.h");
         copy_and_log_file(pContext, "../../easy_gui/easy_gui.h", "../source/external/easy_gui/easy_gui.h");
         copy_and_log_file(pContext, "../../easy_gui/easy_gui.c", "../source/external/easy_gui/easy_gui.c");
 
-        copy_and_log_file(pContext, "../../easy_math/easy_math.h", "../include/external/easy_math/easy_math.h");
+        copy_and_log_file(pContext, "../../easy_math/easy_math.h", "../include/easy_ge/external/easy_math/easy_math.h");
         copy_and_log_file(pContext, "../../easy_math/easy_math.h", "../source/external/easy_math/easy_math.h");
         copy_and_log_file(pContext, "../../easy_math/easy_math.c", "../source/external/easy_math/easy_math.c");
 
-        copy_and_log_file(pContext, "../../easy_path/easy_path.h", "../include/external/easy_path/easy_path.h");
+        copy_and_log_file(pContext, "../../easy_path/easy_path.h", "../include/easy_ge/external/easy_path/easy_path.h");
         copy_and_log_file(pContext, "../../easy_path/easy_path.h", "../source/external/easy_path/easy_path.h");
         copy_and_log_file(pContext, "../../easy_path/easy_path.c", "../source/external/easy_path/easy_path.c");
 
-        copy_and_log_file(pContext, "../../easy_physics/easy_physics.h", "../include/external/easy_physics/easy_physics.h");
+        copy_and_log_file(pContext, "../../easy_physics/easy_physics.h", "../include/easy_ge/external/easy_physics/easy_physics.h");
         copy_and_log_file(pContext, "../../easy_physics/easy_physics.h", "../source/external/easy_physics/easy_physics.h");
         copy_and_log_file(pContext, "../../easy_physics/easy_physics.c", "../source/external/easy_physics/easy_physics.c");
 
-        copy_and_log_file(pContext, "../../easy_util/easy_util.h", "../include/external/easy_util/easy_util.h");
+        copy_and_log_file(pContext, "../../easy_util/easy_util.h", "../include/easy_ge/external/easy_util/easy_util.h");
         copy_and_log_file(pContext, "../../easy_util/easy_util.h", "../source/external/easy_util/easy_util.h");
         copy_and_log_file(pContext, "../../easy_util/easy_util.c", "../source/external/easy_util/easy_util.c");
     }
@@ -195,9 +195,9 @@ bool on_cmdline(const char* key, const char* value, void* pUserData)
     if (strcmp(key, "[path]") == 0)
     {
         char basedir[EASYVFS_MAX_PATH];
-        easypath_copybasepath(value, basedir, sizeof(basedir));
+        easypath_copy_base_path(value, basedir, sizeof(basedir));
 
-        if (easypath_isrelative(basedir))
+        if (easypath_is_relative(basedir))
         {
             char cwd[EASYVFS_MAX_PATH];
 #ifdef _WIN32
