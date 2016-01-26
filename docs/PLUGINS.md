@@ -6,18 +6,21 @@ explains how plugins work.
 
 ## Rationale
 There are several reasons a plugin architecture has been chosen:
- 1) It allows third-party dependencies to be offloaded to plugins which can
-    be pre-built and placed into the repository directly. This way developers
-	who want to get up and running with the engine do not need to mess around
-	with third-party dependencies and instead just use the pre-built plugin
-	binaries.
- 2) It allows alternate implementations to be dropped in without needing to
-    recompile. For example, one could have an implementation of a scripting
-	plugin that uses the reference Lua 5.1 library, and then another that uses
-	LuaJIT. The user can then choose which one to use via a config entry.
- 3) When a third-party dependency is written in C++ or uses a different
-    licence, they can be isolated to the plugin rather than placed in the main
-	code base. This keeps the engine's main code base clean and consistent.
+
+1. It allows third-party dependencies to be offloaded to plugins which can
+   be pre-built and placed into the repository directly. This way developers
+   who want to get up and running with the engine do not need to mess around
+   with third-party dependencies and instead just use the pre-built plugin
+   binaries.
+
+2. It allows alternate implementations to be dropped in without needing to
+   recompile. For example, one could have an implementation of a scripting
+   plugin that uses the reference Lua 5.1 library, and then another that uses
+   LuaJIT. The user can then choose which one to use via a config entry.
+
+3. When a third-party dependency is written in C++ or uses a different
+   licence, they can be isolated to the plugin rather than placed in the main
+   code base. This keeps the engine's main code base clean and consistent.
 	
 Because one of the primary goals of the engine is to keep the build system
 simple, offloading third-party libraries into plugins and making use of
