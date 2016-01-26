@@ -41,8 +41,8 @@ extern "C" {
 // won't contain a meaningful value. When this is changed the source file will need to be recompiled. Most of the time leaving this
 // at 256 is fine, but it's not a problem to increase the size if you are encountering truncation issues. Note that increasing this
 // value will increase memory usage. You should not need make this any higher than 4096.
-//#define EASYVFS_MAX_PATH    256
-#define EASYVFS_MAX_PATH    1024
+#define EASYVFS_MAX_PATH    256
+//#define EASYVFS_MAX_PATH    1024
 //#define EASYVFS_MAX_PATH    4096
 
 
@@ -50,10 +50,11 @@ extern "C" {
 /// The allowable access modes.
 typedef unsigned int easyvfs_access_mode;
 
-#define EASYVFS_READ      (1 << 0)
-#define EASYVFS_WRITE     (1 << 1)
-#define EASYVFS_EXISTING  (1 << 2)
-#define EASYVFS_APPEND    (1 << 3)
+#define EASYVFS_READ        (1 << 0)
+#define EASYVFS_WRITE       (1 << 1)
+#define EASYVFS_EXISTING    (1 << 2)
+#define EASYVFS_APPEND      (1 << 3)
+#define EASYVFS_CREATE_DIRS (1 << 4)    // Creates the directory structure if required.
 
 #define EASYVFS_FILE_ATTRIBUTE_DIRECTORY    0x00000001
 #define EASYVFS_FILE_ATTRIBUTE_READONLY     0x00000002
@@ -142,6 +143,9 @@ struct easyvfs_archive
     /// The absolute, verbose path of the archive. For native archives, this will be the name of the folder on the native file
     /// system. For non-native archives (zip, etc.) this is the the path of the archive file.
     char absolutePath[EASYVFS_MAX_PATH];
+
+    /// The base path the archive was opened from. This will be one of the paths that was registered with easyvfs_add_base_directory().
+    char basePath[EASYVFS_MAX_PATH];
 
     /// The user data that was returned when the archive was opened by the archive definition.
     void* pUserData;
@@ -250,7 +254,7 @@ void easyvfs_remove_all_base_directories(easyvfs_context* pContext);
 unsigned int easyvfs_get_base_directory_count(easyvfs_context* pContext);
 
 /// Retrieves the base directory at the given index.
-bool easyvfs_get_base_directory_by_index(easyvfs_context* pContext, unsigned int index, char* absolutePathOut, unsigned int absolutePathBufferSizeInBytes);
+const char* easyvfs_get_base_directory_by_index(easyvfs_context* pContext, unsigned int index);
 
 
 /// Sets the base directory for write operations (including delete).
@@ -366,9 +370,18 @@ easyvfs_uint64 easyvfs_file_size(easyvfs_file* pFile);
 void easyvfs_flush(easyvfs_file* pFile);
 
 
+/// Retrieves the size of the extra data for the given file.
+unsigned int easyvfs_get_extra_data_size(easyvfs_file* pFile);
+
+/// Retrieves a pointer to the extra data for the given file.
+void* easyvfs_get_extra_data(easyvfs_file* pFile);
+
 
 //////////////////////////////////////
 // High Level API
+
+/// Helper function for determining whether or not the given path refers to a base directory.
+bool easyvfs_is_base_directory(easyvfs_context* pContext, const char* baseDir);
 
 /// Helper function for writing a string.
 bool easyvfs_write_string(easyvfs_file* pFile, const char* str);
@@ -380,6 +393,47 @@ bool easyvfs_write_string(easyvfs_file* pFile, const char* str);
 bool easyvfs_write_line(easyvfs_file* pFile, const char* str);
 
 
+/// Helper function for opening a binary file and retrieving it's data in one go.
+///
+/// @remarks
+///     Free the returned pointer with easyvfs_free()
+void* easyvfs_open_and_read_binary_file(easyvfs_context* pContext, const char* absoluteOrRelativePath, size_t* pSizeInBytesOut);
+
+/// Helper function for opening a text file and retrieving it's data in one go.
+///
+/// @remarks
+///     Free the returned pointer with easyvfs_free()
+///     @par
+///     The returned string is null terminated. The size returned by pSizeInBytesOut does not include the null terminator.
+char* easyvfs_open_and_read_text_file(easyvfs_context* pContext, const char* absoluteOrRelativePath, size_t* pSizeInBytesOut);
+
+/// Helper function for opening a file, writing the given data, and then closing it.
+bool easyvfs_open_and_write_binary_file(easyvfs_context* pContext, const char* absoluteOrRelativePath, const void* pData, size_t dataSize);
+
+/// Helper function for opening a file, writing the given textual data, and then closing it.
+bool easyvfs_open_and_write_text_file(easyvfs_context* pContext, const char* absoluteOrRelativePath, const char* pTextData);
+
+
+/// Helper function for determining whether or not the given path refers to an existing file or directory.
+bool easyvfs_exists(easyvfs_context* pContext, const char* absoluteOrRelativePath);
+
+/// Determines if the given path refers to an existing file (not a directory).
+///
+/// @remarks
+///     This will return false for directories. Use easyvfs_exists() to check for either a file or directory.
+bool easyvfs_is_existing_file(easyvfs_context* pContext, const char* absoluteOrRelativePath);
+
+/// Determines if the given path refers to an existing directory.
+bool easyvfs_is_existing_directory(easyvfs_context* pContext, const char* absoluteOrRelativePath);
+
+/// Same as easyvfs_mkdir(), except creates the entire directory structure recursively.
+bool easyvfs_mkdir_recursive(easyvfs_context* pContext, const char* path);
+
+/// Determines whether or not the given file is at the end.
+///
+/// @remarks
+///     This is just a high-level helper function equivalent to easyvfs_tell(pFile) == easyvfs_file_size(pFile).
+bool easyvfs_eof(easyvfs_file* pFile);
 
 
 //////////////////////////////////////
@@ -404,6 +458,8 @@ bool easyvfs_is_path_child(const char* childAbsolutePath, const char* parentAbso
 // is_path_descendant()
 bool easyvfs_is_path_descendant(const char* descendantAbsolutePath, const char* parentAbsolutePath);
 
+// easyvfs_copy_base_path()
+bool easyvfs_copy_base_path(const char* path, char* baseOut, unsigned int baseSizeInBytes);
 
 // easyvfs_file_name()
 const char* easyvfs_file_name(const char* path);

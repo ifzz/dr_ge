@@ -15,10 +15,6 @@
 // Hierarchy
 // - An element can have a parent and any number of children. If an element does not have a parent, it is referred to as the
 //   top-level element.
-// - Inbound events will typically specify the relevant top-level element and let easy_gui do the relevant processing required
-//   to generate the appropriate outbound events. For example, the mouse-move event will be specified with respect to the top-
-//   level element, but easy_gui will determine the exact child element that the mouse moved on and thus should receive the
-//   relevant outbound mouse-move event.
 // - When an element is deleted, it's children will be deleted as well.
 // - Top-level elements do not have siblings.
 //
@@ -31,6 +27,10 @@
 //   the outbound events it generates have been handled.
 // - Inbound events are not thread safe, however an application is free to post an inbound event from any thread so long as
 //   it does it's own synchronization.
+// - Inbound events will typically specify the relevant top-level element and let easy_gui do the relevant processing required
+//   to generate the appropriate outbound events. For example, the mouse-move event will be specified with respect to the top-
+//   level element, but easy_gui will determine the exact child element that the mouse moved on and thus should receive the
+//   relevant outbound mouse-move event.
 // - There are some special events that are handled differently to normal events. The best example is the paint events. The
 //   paint event is only called from easygui_draw().
 // - Key press/release events are only ever posted to the element that has the keyboard capture/focus which is set with
@@ -44,26 +44,37 @@
 //   properly.
 // - A global outbound event handler should be implemented for each of the following events:
 //   - on_dirty: Called when a region of an element is marked as dirty and needs to be redrawn. The application will want to
-//     invalidate the container window to trigger an operating system redraw. Set this with easygui_register_global_on_dirty().
+//     invalidate the container window to trigger an operating system redraw. Set this with easygui_set_global_on_dirty().
 //   - on_capture_mouse: Called when the mouse is captured and gives the application the opportunity to capture the mouse against
-//     the container window at the operating system level. Set with easygui_register_global_on_capture_mouse().
+//     the container window at the operating system level. Set with easygui_set_global_on_capture_mouse().
 //   - on_release_mouse: Called when the mouse is released. The opposite of on_capture_mouse.
 //   - on_capture_keyboard: Called when an element is given the keyboard focus and gives the application the opportunity to
-//     apply the keyboard focus to the container window. Set with easygui_register_globa_on_capture_keyboard().
+//     apply the keyboard focus to the container window. Set with easygui_set_global_on_capture_keyboard().
 //   - on_release_keyboard: Called when an element loses the keyboard focus. The opposite of on_capture_keyboard.
 //
 // Layout
-// - An element's data structure does not store it's relative position. Instead, it stores it's absolute position. The
-//   rationale for this is that storing it as relative complicates absolute positioning calculations because it would
-//   need to do a recursive traversal of the element's ancestors.
+// - An element's data structure does not store it's relative position but instead stores it's absolute position. The rationale
+//   for this is that storing it as relative complicates absolute positioning calculations because it would need to do a recursive
+//   traversal of the element's ancestors.
+// - Child elements can be scaled by setting an element's inner scale. The inner scale does not scale the element itself - only
+//   it's children.
+// - When an element is drawn, everything is scaled by it's inner scale. For example, if the inner scale is 2x and a 100x100 quad
+//   is drawn, the quad will be scaled to 200x200. An exception to this rule is fonts, which are never scaled. This 0s because
+//   text is always drawn based on the size of the font.
+// - Applications should only need to work on unscaled coordinates. That is, an application should never need to worry about
+//   manual scaling, except for fonts. When positioning and sizing child elements, they should be done based on unscaled
+//   coordinates.
+// - Use the inner scale system for DPI awareness.
+// - The inner scale is applied recursively. That is, if a top level element has it's inner scale set to 2x and one of it's
+//   children has an inner scale of 2x, the actual inner scale of the child element will be 4x.
+//   
 //
 // Drawing/Painting
 // - Drawing is one of the more complex parts of the GUI because it can be a bit unintuitive regarding exactly when an element
 //   is drawn and when a drawing function is allowed to be called.
 // - To draw an element, call easygui_draw(). This takes a pointer to the element to draw and the rectangle region that should
 //   be redrawn. Any children that fall inside the specified rectangle region will be redrawn as well. You do not want to call
-//   easygui_draw() on a parent element and then again on it's children.
-// - It's best to only call easygui_draw() on top-level elements.
+//   easygui_draw() on a parent element and then again on it's children because easy_gui will do that automatically.
 // - easygui_draw() does not draw anything directly, but rather calls painting callback routines which is where the actual
 //   drawing takes place.
 // - Sometimes an application will need to be told when a region of an element is dirty and needs redrawing. An example is
@@ -77,7 +88,7 @@
 //   required, it can be disabled with easygui_disable_auto_dirty(). You may want to disable automatic dirtying if you are
 //   running a real-time application like a game which would redraw the entire GUI every frame anyway and thus not require
 //   handling of the paint message.
-// - Real-time application guidlines (games, etc.):
+// - Real-time application guidelines (games, etc.):
 //   - easygui_disable_auto_dirty()
 //   - easygui_draw(pTopLevelElement, 0, 0, viewportWidth, viewportHeight) at the end of every frame after your main loop.
 //
@@ -148,15 +159,26 @@
 // following structure is assumed:
 // <Base Directory>
 //   - easy_draw
-//     - easy_draw.h
-//     - easy_draw.c
+//     - easy_2d.h
+//     - easy_2d.c
 //   - easy_gui
 //     - easy_gui.h
 //     - easy_gui.c
-#include "../easy_draw/easy_draw.h"
+#include "../easy_draw/easy_2d.h"
 #endif
 
 #include <stdbool.h>
+
+#ifndef EASYGUI_MAX_FONT_FAMILY_LENGTH
+#define EASYGUI_MAX_FONT_FAMILY_LENGTH  128
+#endif
+
+
+// Annotations.
+#ifndef PRIVATE
+#define PRIVATE
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -164,15 +186,66 @@ extern "C" {
 
 typedef struct easygui_context easygui_context;
 typedef struct easygui_element easygui_element;
-typedef struct easygui_event easygui_event;
 typedef struct easygui_color easygui_color;
 typedef struct easygui_rect easygui_rect;
 typedef struct easygui_painting_callbacks easygui_painting_callbacks;
-
-typedef void* easygui_font;
+typedef struct easygui_font easygui_font;
+typedef struct easygui_image easygui_image;
+typedef struct easygui_font_metrics easygui_font_metrics;
+typedef struct easygui_glyph_metrics easygui_glyph_metrics;
 
 typedef unsigned char easygui_byte;
-typedef int easygui_key;
+typedef unsigned int easygui_key;
+
+typedef void* easygui_resource;
+
+
+/// Font weights.
+typedef enum
+{
+    easygui_font_weight_medium = 0,
+    easygui_font_weight_thin,
+    easygui_font_weight_extra_light,
+    easygui_font_weight_light,
+    easygui_font_weight_semi_bold,
+    easygui_font_weight_bold,
+    easygui_font_weight_extra_bold,
+    easygui_font_weight_heavy,
+
+    easygui_font_weight_normal  = easygui_font_weight_medium,
+    easygui_font_weight_default = easygui_font_weight_medium
+
+} easygui_font_weight;
+
+/// Font slants.
+typedef enum
+{
+    easygui_font_slant_none = 0,
+    easygui_font_slant_italic,
+    easygui_font_slant_oblique
+
+} easygui_font_slant;
+
+
+/// Font metrics.
+struct easygui_font_metrics
+{
+    int ascent;
+    int descent;
+    int lineHeight;
+    int spaceWidth;
+};
+
+/// Glyph metrics.
+struct easygui_glyph_metrics
+{
+    int width;
+    int height;
+    int originX;
+    int originY;
+    int advanceX;
+    int advanceY;
+};
 
 
 /// Structure representing an RGBA color. Color components are specified in the range of 0 - 255.
@@ -194,31 +267,97 @@ struct easygui_rect
 };
 
 
+#define EASYGUI_IMAGE_DRAW_BACKGROUND    (1 << 0)
+#define EASYGUI_IMAGE_DRAW_BOUNDS        (1 << 1)
+#define EASYGUI_IMAGE_CLIP_BOUNDS        (1 << 2)        //< Clips the image to the bounds
+#define EASYGUI_IMAGE_ALIGN_CENTER       (1 << 3)
+#define EASYGUI_IMAGE_HINT_NO_ALPHA      (1 << 4)
+
+typedef struct
+{
+    /// The destination position on the x axis. This is ignored if the EASY2D_IMAGE_ALIGN_CENTER option is set.
+    float dstX;
+
+    /// The destination position on the y axis. This is ignored if the EASY2D_IMAGE_ALIGN_CENTER option is set.
+    float dstY;
+
+    /// The destination width.
+    float dstWidth;
+
+    /// The destination height.
+    float dstHeight;
+
+
+    /// The source offset on the x axis.
+    float srcX;
+
+    /// The source offset on the y axis.
+    float srcY;
+
+    /// The source width.
+    float srcWidth;
+
+    /// The source height.
+    float srcHeight;
+
+
+    /// The position of the destination's bounds on the x axis.
+    float dstBoundsX;
+
+    /// The position of the destination's bounds on the y axis.
+    float dstBoundsY;
+
+    /// The width of the destination's bounds.
+    float dstBoundsWidth;
+
+    /// The height of the destination's bounds.
+    float dstBoundsHeight;
+
+
+    /// The foreground tint color. This is not applied to the background color, and the alpha component is ignored.
+    easygui_color foregroundTint;
+
+    /// The background color. Only used if the EASY2D_IMAGE_DRAW_BACKGROUND option is set.
+    easygui_color backgroundColor;
+
+    /// The bounds color. This color is used for the region of the bounds that sit on the outside of the destination rectangle. This will
+    /// usually be set to the same value as backgroundColor, but it could also be used to draw a border around the image.
+    easygui_color boundsColor;
+
+
+    /// Flags for controlling how the image should be drawn.
+    unsigned int options;
+
+} easygui_draw_image_args;
+
+
 typedef void (* easygui_callback)();
 
 typedef void (* easygui_on_move_proc)                 (easygui_element* pElement, float newRelativePosX, float newRelativePosY);
 typedef void (* easygui_on_size_proc)                 (easygui_element* pElement, float newWidth, float newHeight);
 typedef void (* easygui_on_mouse_enter_proc)          (easygui_element* pElement);
 typedef void (* easygui_on_mouse_leave_proc)          (easygui_element* pElement);
-typedef void (* easygui_on_mouse_move_proc)           (easygui_element* pElement, int relativeMousePosX, int relativeMousePosY);
-typedef void (* easygui_on_mouse_button_down_proc)    (easygui_element* pElement, int mouseButton, int relativeMousePosX, int relativeMousePosY);
-typedef void (* easygui_on_mouse_button_up_proc)      (easygui_element* pElement, int mouseButton, int relativeMousePosX, int relativeMousePosY);
-typedef void (* easygui_on_mouse_button_dblclick_proc)(easygui_element* pElement, int mouseButton, int relativeMousePosX, int relativeMousePosY);
-typedef void (* easygui_on_mouse_wheel_proc)          (easygui_element* pElement, int delta, int relativeMousePosX, int relativeMousePosY);
-typedef void (* easygui_on_key_down_proc)             (easygui_element* pElement, easygui_key key, bool isAutoRepeated);
-typedef void (* easygui_on_key_up_proc)               (easygui_element* pElement, easygui_key key);
-typedef void (* easygui_on_printable_key_down_proc)   (easygui_element* pElement, unsigned int character, bool isAutoRepeated);
+typedef void (* easygui_on_mouse_move_proc)           (easygui_element* pElement, int relativeMousePosX, int relativeMousePosY, int stateFlags);
+typedef void (* easygui_on_mouse_button_down_proc)    (easygui_element* pElement, int mouseButton, int relativeMousePosX, int relativeMousePosY, int stateFlags);
+typedef void (* easygui_on_mouse_button_up_proc)      (easygui_element* pElement, int mouseButton, int relativeMousePosX, int relativeMousePosY, int stateFlags);
+typedef void (* easygui_on_mouse_button_dblclick_proc)(easygui_element* pElement, int mouseButton, int relativeMousePosX, int relativeMousePosY, int stateFlags);
+typedef void (* easygui_on_mouse_wheel_proc)          (easygui_element* pElement, int delta, int relativeMousePosX, int relativeMousePosY, int stateFlags);
+typedef void (* easygui_on_key_down_proc)             (easygui_element* pElement, easygui_key key, int stateFlags);
+typedef void (* easygui_on_key_up_proc)               (easygui_element* pElement, easygui_key key, int stateFlags);
+typedef void (* easygui_on_printable_key_down_proc)   (easygui_element* pElement, unsigned int character, int stateFlags);
 typedef void (* easygui_on_paint_proc)                (easygui_element* pElement, easygui_rect relativeRect, void* pPaintData);
 typedef void (* easygui_on_dirty_proc)                (easygui_element* pElement, easygui_rect relativeRect);
 typedef bool (* easygui_on_hittest_proc)              (easygui_element* pElement, float relativePosX, float relativePosY);
 typedef void (* easygui_on_capture_mouse_proc)        (easygui_element* pElement);
 typedef void (* easygui_on_release_mouse_proc)        (easygui_element* pElement);
-typedef void (* easygui_on_capture_keyboard_proc)     (easygui_element* pElement);
-typedef void (* easygui_on_release_keyboard_proc)     (easygui_element* pElement);
+typedef void (* easygui_on_capture_keyboard_proc)     (easygui_element* pElement, easygui_element* pPrevCapturedElement);
+typedef void (* easygui_on_release_keyboard_proc)     (easygui_element* pElement, easygui_element* pNewCapturedElement);
 typedef void (* easygui_on_log)                       (easygui_context* pContext, const char* message);
 
 typedef void (* easygui_draw_begin_proc)                   (void* pPaintData);
 typedef void (* easygui_draw_end_proc)                     (void* pPaintData);
+typedef void (* easygui_set_clip_proc)                     (easygui_rect relativeRect, void* pPaintData);
+typedef void (* easygui_get_clip_proc)                     (easygui_rect* pRectOut, void* pPaintData);
 typedef void (* easygui_draw_line_proc)                    (float startX, float startY, float endX, float endY, float width, easygui_color color, void* pPaintData);
 typedef void (* easygui_draw_rect_proc)                    (easygui_rect relativeRect, easygui_color color, void* pPaintData);
 typedef void (* easygui_draw_rect_outline_proc)            (easygui_rect relativeRect, easygui_color color, float outlineWidth, void* pPaintData);
@@ -226,34 +365,128 @@ typedef void (* easygui_draw_rect_with_outline_proc)       (easygui_rect relativ
 typedef void (* easygui_draw_round_rect_proc)              (easygui_rect relativeRect, easygui_color color, float radius, void* pPaintData);
 typedef void (* easygui_draw_round_rect_outline_proc)      (easygui_rect relativeRect, easygui_color color, float radius, float outlineWidth, void* pPaintData);
 typedef void (* easygui_draw_round_rect_with_outline_proc) (easygui_rect relativeRect, easygui_color color, float radius, float outlineWidth, easygui_color outlineColor, void* pPaintData);
-typedef void (* easygui_draw_text_proc)                    (const char* text, int textSizeInBytes, float posX, float posY, easygui_font font, easygui_color color, easygui_color backgroundColor, void* pPaintData);
-typedef void (* easygui_set_clip_proc)                     (easygui_rect relativeRect, void* pPaintData);
-typedef void (* easygui_get_clip_proc)                     (easygui_rect* pRectOut, void* pPaintData);
+typedef void (* easygui_draw_text_proc)                    (easygui_resource font, const char* text, int textLengthInBytes, float posX, float posY, easygui_color color, easygui_color backgroundColor, void* pPaintData);
+typedef void (* easygui_draw_image_proc)                   (easygui_resource image, easygui_draw_image_args* pArgs, void* pPaintData);
+
+typedef easygui_resource (* easygui_create_font_proc)                        (void* pPaintingContext, const char* family, unsigned int size, easygui_font_weight weight, easygui_font_slant slant, float rotation);
+typedef void             (* easygui_delete_font_proc)                        (easygui_resource font);
+typedef unsigned int     (* easygui_get_font_size_proc)                      (easygui_resource font);
+typedef bool             (* easygui_get_font_metrics_proc)                   (easygui_resource font, easygui_font_metrics* pMetricsOut);
+typedef bool             (* easygui_get_glyph_metrics_proc)                  (easygui_resource font, unsigned int utf32, easygui_glyph_metrics* pMetricsOut);
+typedef bool             (* easygui_measure_string_proc)                     (easygui_resource font, const char* text, size_t textSizeInBytes, float* pWidthOut, float* pHeightOut);
+typedef bool             (* easygui_get_text_cursor_position_from_point_proc)(easygui_resource font, const char* text, size_t textSizeInBytes, float maxWidth, float inputPosX, float* pTextCursorPosXOut, unsigned int* pCharacterIndexOut);
+typedef bool             (* easygui_get_text_cursor_position_from_char_proc) (easygui_resource font, const char* text, unsigned int characterIndex, float* pTextCursorPosXOut);
+
+typedef easygui_resource (* easygui_create_image_proc)     (void* pPaintingContext, unsigned int width, unsigned int height, unsigned int stride, const void* pImageData);
+typedef void             (* easygui_delete_image_proc)     (easygui_resource image);
+typedef void             (* easygui_get_image_size_proc)   (easygui_resource image, unsigned int* pWidthOut, unsigned int* pHeightOut);
 
 typedef bool (* easygui_visible_iteration_proc)(easygui_element* pElement, easygui_rect *pRelativeRect, void* pUserData);
 
+
+// Common mouse buttons.
 #define EASYGUI_MOUSE_BUTTON_LEFT       1
 #define EASYGUI_MOUSE_BUTTON_RIGHT      2
 #define EASYGUI_MOUSE_BUTTON_MIDDLE     3
+
+// Common key codes.
+#define EASYGUI_BACKSPACE               0x08
+#define EASYGUI_SHIFT                   0x10
+#define EASYGUI_ESCAPE                  0x1B
+#define EASYGUI_PAGE_UP                 0x21
+#define EASYGUI_PAGE_DOWN               0x22
+#define EASYGUI_END                     0x23
+#define EASYGUI_HOME                    0x24
+#define EASYGUI_ARROW_LEFT              0x25
+#define EASYGUI_ARROW_UP                0x26
+#define EASYGUI_ARROW_DOWN              0x27
+#define EASYGUI_ARROW_RIGHT             0x28
+#define EASYGUI_DELETE                  0x2E
+
+// Key state flags.
+#define EASYGUI_MOUSE_BUTTON_LEFT_DOWN   (1 << 0)
+#define EASYGUI_MOUSE_BUTTON_RIGHT_DOWN  (1 << 1)
+#define EASYGUI_MOUSE_BUTTON_MIDDLE_DOWN (1 << 2)
+#define EASYGUI_MOUSE_BUTTON_4_DOWN      (1 << 3)
+#define EASYGUI_MOUSE_BUTTON_5_DOWN      (1 << 4)
+#define EASYGUI_KEY_STATE_SHIFT_DOWN     (1 << 5)        // Whether or not a shift key is down at the time the input event is handled.
+#define EASYGUI_KEY_STATE_CTRL_DOWN      (1 << 6)        // Whether or not a ctrl key is down at the time the input event is handled.
+#define EASYGUI_KEY_STATE_ALT_DOWN       (1 << 7)        // Whether or not an alt key is down at the time the input event is handled.
+#define EASYGUI_KEY_STATE_AUTO_REPEATED  (1 << 31)       // Whether or not the key press is generated due to auto-repeating. Only used with key down events.
+
+
 
 
 /// Structure containing callbacks for painting routines.
 struct easygui_painting_callbacks
 {
-    easygui_draw_begin_proc                   drawBegin;
-    easygui_draw_end_proc                     drawEnd;
+    easygui_draw_begin_proc                          drawBegin;
+    easygui_draw_end_proc                            drawEnd;
 
-    easygui_draw_line_proc                    drawLine;
-    easygui_draw_rect_proc                    drawRect;
-    easygui_draw_rect_outline_proc            drawRectOutline;
-    easygui_draw_rect_with_outline_proc       drawRectWithOutline;
-    easygui_draw_round_rect_proc              drawRoundRect;
-    easygui_draw_round_rect_outline_proc      drawRoundRectOutline;
-    easygui_draw_round_rect_with_outline_proc drawRoundRectWithOutline;
-    easygui_draw_text_proc                    drawText;
+    easygui_set_clip_proc                            setClip;
+    easygui_get_clip_proc                            getClip;
 
-    easygui_set_clip_proc                     setClip;
-    easygui_get_clip_proc                     getClip;
+    easygui_draw_line_proc                           drawLine;
+    easygui_draw_rect_proc                           drawRect;
+    easygui_draw_rect_outline_proc                   drawRectOutline;
+    easygui_draw_rect_with_outline_proc              drawRectWithOutline;
+    easygui_draw_round_rect_proc                     drawRoundRect;
+    easygui_draw_round_rect_outline_proc             drawRoundRectOutline;
+    easygui_draw_round_rect_with_outline_proc        drawRoundRectWithOutline;
+    easygui_draw_text_proc                           drawText;
+    easygui_draw_image_proc                          drawImage;
+
+    easygui_create_font_proc                         createFont;
+    easygui_delete_font_proc                         deleteFont;
+    easygui_get_font_size_proc                       getFontSize;
+    easygui_get_font_metrics_proc                    getFontMetrics;
+    easygui_get_glyph_metrics_proc                   getGlyphMetrics;
+    easygui_measure_string_proc                      measureString;
+    easygui_get_text_cursor_position_from_point_proc getTextCursorPositionFromPoint;
+    easygui_get_text_cursor_position_from_char_proc  getTextCursorPositionFromChar;
+
+    easygui_create_image_proc                        createImage;
+    easygui_delete_image_proc                        deleteImage;
+    easygui_get_image_size_proc                      getImageSize;
+};
+
+struct easygui_image
+{
+    /// A pointer to the context that owns this image.
+    easygui_context* pContext;
+
+    /// The resource handle that is passed around to the callback functions.
+    easygui_resource hResource;
+};
+
+struct easygui_font
+{
+    /// A pointer to the context that owns this font.
+    easygui_context* pContext;
+
+    /// The font family.
+    char family[EASYGUI_MAX_FONT_FAMILY_LENGTH];
+
+    /// The base size of the font. This is set to the value that was used to create the font in the first place.
+    unsigned int size;
+
+    /// The font's weight.
+    easygui_font_weight weight;
+
+    /// The fon't slant.
+    easygui_font_slant slant;
+
+    /// The fon't rotation.
+    float rotation;
+
+    /// The number of internal fonts in <pInternalFonts>
+    size_t internalFontCount;
+
+    /// A GUI font is actually a collection of font objects with the same family and style, but varying sizes. The variance
+    /// in sizes is used to implement scaling. There is an internal font resource for each font size which are stored in a
+    /// simple dynamically sized array. The first element in the array is the internal font representing the properties that
+    /// were passed in to easygui_create_font().
+    easygui_resource* pInternalFonts;
 };
 
 
@@ -298,6 +531,13 @@ struct easygui_element
 
     /// The height of the element.
     float height;
+
+
+    /// The scale to apply to child elements on the x axis.
+    float innerScaleX;
+
+    /// The scale to apply to child elements on the y axis.
+    float innerScaleY;
 
 
     /// Boolean flags.
@@ -363,7 +603,7 @@ struct easygui_element
 
 
     /// The size of the extra data.
-    unsigned int extraDataSize;
+    size_t extraDataSize;
 
     /// A pointer to the extra data.
     easygui_byte pExtraData[1];
@@ -371,8 +611,12 @@ struct easygui_element
 
 struct easygui_context
 {
+    /// The paiting context.
+    void* pPaintingContext;
+
     /// The painting callbacks.
     easygui_painting_callbacks paintingCallbacks;
+
 
     /// The inbound event counter. This is incremented with easygui_begin_inbound_event() and decremented with
     /// easygui_end_inbound_event(). We use this to determine whether or not an inbound event is being processed.
@@ -395,6 +639,11 @@ struct easygui_context
 
     /// A pointer to the element with the keyboard focus.
     easygui_element* pElementWithKeyboardCapture;
+
+    /// A pointer to the element that wants the keyboard focus. If for some reason an element isn't able to immediately
+    /// capture the keyboard (such as while in the middle of a release_keyboard event handler) this will be set to that
+    /// particular element. This will then be used to capture the keyboard at a later time when it is able.
+    easygui_element* pElementWantingKeyboardCapture;
 
 
     /// Boolean flags.
@@ -470,31 +719,31 @@ void easygui_delete_context(easygui_context* pContext);
 void easygui_post_inbound_event_mouse_leave(easygui_element* pTopLevelElement);
 
 /// Posts a mouse move inbound event.
-void easygui_post_inbound_event_mouse_move(easygui_element* pTopLevelElement, int mousePosX, int mousePosY);
+void easygui_post_inbound_event_mouse_move(easygui_element* pTopLevelElement, int mousePosX, int mousePosY, int stateFlags);
 
 /// Posts a mouse button down inbound event.
-void easygui_post_inbound_event_mouse_button_down(easygui_element* pTopLevelElement, int mouseButton, int mousePosX, int mousePosY);
+void easygui_post_inbound_event_mouse_button_down(easygui_element* pTopLevelElement, int mouseButton, int mousePosX, int mousePosY, int stateFlags);
 
 /// Posts a mouse button up inbound event.
-void easygui_post_inbound_event_mouse_button_up(easygui_element* pTopLevelElement, int mouseButton, int mousePosX, int mousePosY);
+void easygui_post_inbound_event_mouse_button_up(easygui_element* pTopLevelElement, int mouseButton, int mousePosX, int mousePosY, int stateFlags);
 
 /// Posts a mouse button double-clicked inbound event.
-void easygui_post_inbound_event_mouse_button_dblclick(easygui_element* pTopLevelElement, int mouseButton, int mousePosX, int mousePosY);
+void easygui_post_inbound_event_mouse_button_dblclick(easygui_element* pTopLevelElement, int mouseButton, int mousePosX, int mousePosY, int stateFlags);
 
 /// Posts a mouse wheel inbound event.
-void easygui_post_inbound_event_mouse_wheel(easygui_element* pTopLevelElement, int mouseButton, int mousePosX, int mousePosY);
+void easygui_post_inbound_event_mouse_wheel(easygui_element* pTopLevelElement, int mouseButton, int mousePosX, int mousePosY, int stateFlags);
 
 /// Posts a key down inbound event.
-void easygui_post_inbound_event_key_down(easygui_context* pContext, easygui_key key, bool isAutoRepeated);
+void easygui_post_inbound_event_key_down(easygui_context* pContext, easygui_key key, int stateFlags);
 
 /// Posts a key up inbound event.
-void easygui_post_inbound_event_key_up(easygui_context* pContext, easygui_key key);
+void easygui_post_inbound_event_key_up(easygui_context* pContext, easygui_key key, int stateFlags);
 
 /// Posts a printable key down inbound event.
 ///
 /// @remarks
 ///     The \c character argument should be a UTF-32 code point.
-void easygui_post_inbound_event_printable_key_down(easygui_context* pContext, unsigned int character, bool isAutoRepeated);
+void easygui_post_inbound_event_printable_key_down(easygui_context* pContext, unsigned int character, int stateFlags);
 
 
 /// Registers the global on_dirty event callback.
@@ -502,7 +751,7 @@ void easygui_post_inbound_event_printable_key_down(easygui_context* pContext, un
 /// @remarks
 ///     This is called whenever a region of an element is marked as dirty and allows an application to mark the region of the
 ///     container window as dirty to trigger an operating system level repaint of the window.
-void easygui_register_global_on_dirty(easygui_context* pContext, easygui_on_dirty_proc onDirty);
+void easygui_set_global_on_dirty(easygui_context* pContext, easygui_on_dirty_proc onDirty);
 
 /// Registers the global on_capture_mouse event callback.
 ///
@@ -512,7 +761,7 @@ void easygui_register_global_on_dirty(easygui_context* pContext, easygui_on_dirt
 ///     @par
 ///     The advantage of using a global event callback is that it can be set once at the context level rather than many times
 ///     at the element level.
-void easygui_register_global_on_capture_mouse(easygui_context* pContext, easygui_on_capture_mouse_proc onCaptureMouse);
+void easygui_set_global_on_capture_mouse(easygui_context* pContext, easygui_on_capture_mouse_proc onCaptureMouse);
 
 /// Registers the global on_release_mouse event callback.
 ///
@@ -522,7 +771,7 @@ void easygui_register_global_on_capture_mouse(easygui_context* pContext, easygui
 ///     @par
 ///     The advantage of using a global event callback is that it can be set once at the context level rather than many times
 ///     at the element level.
-void easygui_register_global_on_release_mouse(easygui_context* pContext, easygui_on_release_mouse_proc onReleaseMouse);
+void easygui_set_global_on_release_mouse(easygui_context* pContext, easygui_on_release_mouse_proc onReleaseMouse);
 
 /// Registers the global on_capture_keyboard event callback.
 ///
@@ -532,7 +781,7 @@ void easygui_register_global_on_release_mouse(easygui_context* pContext, easygui
 ///     @par
 ///     The advantage of using a global event callback is that it can be set once at the context level rather than many times
 ///     at the element level.
-void easygui_register_global_on_capture_keyboard(easygui_context* pContext, easygui_on_capture_keyboard_proc onCaptureKeyboard);
+void easygui_set_global_on_capture_keyboard(easygui_context* pContext, easygui_on_capture_keyboard_proc onCaptureKeyboard);
 
 /// Registers the global on_release_keyboard event callback.
 ///
@@ -542,11 +791,11 @@ void easygui_register_global_on_capture_keyboard(easygui_context* pContext, easy
 ///     @par
 ///     The advantage of using a global event callback is that it can be set once at the context level rather than many times
 ///     at the element level.
-void easygui_register_global_on_release_keyboard(easygui_context* pContext, easygui_on_capture_keyboard_proc onReleaseKeyboard);
+void easygui_set_global_on_release_keyboard(easygui_context* pContext, easygui_on_capture_keyboard_proc onReleaseKeyboard);
 
 
 /// Registers the callback to call when a log message is posted.
-void easygui_register_on_log(easygui_context* pContext, easygui_on_log onLog);
+void easygui_set_on_log(easygui_context* pContext, easygui_on_log onLog);
 
 
 
@@ -555,14 +804,14 @@ void easygui_register_on_log(easygui_context* pContext, easygui_on_log onLog);
 // Elements
 
 /// Creates an element.
-easygui_element* easygui_create_element(easygui_context* pContext, easygui_element* pParent, unsigned int extraDataSize);
+easygui_element* easygui_create_element(easygui_context* pContext, easygui_element* pParent, size_t extraDataSize, const void* pExtraData);
 
 /// Deletes and element.
 void easygui_delete_element(easygui_element* pElement);
 
 
 /// Retrieves the size of the extra data of the given element, in bytes.
-unsigned int easygui_get_extra_data_size(easygui_element* pElement);
+size_t easygui_get_extra_data_size(easygui_element* pElement);
 
 /// Retrieves a pointer to the extra data of the given element.
 void* easygui_get_extra_data(easygui_element* pElement);
@@ -606,6 +855,9 @@ void easygui_capture_mouse(easygui_element* pElement);
 /// Releases the mouse capture.
 void easygui_release_mouse(easygui_context* pContext);
 
+/// Retrieves a pointer to the element with the mouse capture.
+easygui_element* easygui_get_element_with_mouse_capture(easygui_context* pContext);
+
 
 /// Sets the element that should receive all future keyboard related events.
 ///
@@ -616,63 +868,68 @@ void easygui_capture_keyboard(easygui_element* pElement);
 /// Releases the keyboard capture.
 void easygui_release_keyboard(easygui_context* pContext);
 
+/// Retrieves a pointer to the element with the keyboard capture.
+easygui_element* easygui_get_element_with_keyboard_capture(easygui_context* pContext);
 
 
 //// Events ////
 
 /// Registers the on_move event callback.
-void easygui_register_on_move(easygui_element* pElement, easygui_on_move_proc callback);
+void easygui_set_on_move(easygui_element* pElement, easygui_on_move_proc callback);
 
 /// Registers the on_size event callback.
-void easygui_register_on_size(easygui_element* pElement, easygui_on_size_proc callback);
+void easygui_set_on_size(easygui_element* pElement, easygui_on_size_proc callback);
 
 /// Registers the on_mouse_enter event callback.
-void easygui_register_on_mouse_enter(easygui_element* pElement, easygui_on_mouse_enter_proc callback);
+void easygui_set_on_mouse_enter(easygui_element* pElement, easygui_on_mouse_enter_proc callback);
 
 /// Registers the on_mouse_leave event callback.
-void easygui_register_on_mouse_leave(easygui_element* pElement, easygui_on_mouse_leave_proc callback);
+void easygui_set_on_mouse_leave(easygui_element* pElement, easygui_on_mouse_leave_proc callback);
 
 /// Registers the on_mouse_move event callback.
-void easygui_register_on_mouse_move(easygui_element* pElement, easygui_on_mouse_move_proc callback);
+void easygui_set_on_mouse_move(easygui_element* pElement, easygui_on_mouse_move_proc callback);
 
 /// Registers the on_mouse_button_down event callback.
-void easygui_register_on_mouse_button_down(easygui_element* pElement, easygui_on_mouse_button_down_proc callback);
+void easygui_set_on_mouse_button_down(easygui_element* pElement, easygui_on_mouse_button_down_proc callback);
 
 /// Registers the on_mouse_button_up event callback.
-void easygui_register_on_mouse_button_up(easygui_element* pElement, easygui_on_mouse_button_up_proc callback);
+void easygui_set_on_mouse_button_up(easygui_element* pElement, easygui_on_mouse_button_up_proc callback);
 
 /// Registers the on_mouse_button_down event callback.
-void easygui_register_on_mouse_button_dblclick(easygui_element* pElement, easygui_on_mouse_button_dblclick_proc callback);
+void easygui_set_on_mouse_button_dblclick(easygui_element* pElement, easygui_on_mouse_button_dblclick_proc callback);
+
+/// Registers the on_mouse_wheel event callback.
+void easygui_set_on_mouse_wheel(easygui_element* pElement, easygui_on_mouse_wheel_proc callback);
 
 /// Registers the on_key_down event callback.
-void easygui_register_on_key_down(easygui_element* pElement, easygui_on_key_down_proc callback);
+void easygui_set_on_key_down(easygui_element* pElement, easygui_on_key_down_proc callback);
 
 /// Registers the on_key_up event callback.
-void easygui_register_on_key_up(easygui_element* pElement, easygui_on_key_up_proc callback);
+void easygui_set_on_key_up(easygui_element* pElement, easygui_on_key_up_proc callback);
 
 /// Registers the on_printable_key_down event callback.
-void easygui_register_on_printable_key_down(easygui_element* pElement, easygui_on_printable_key_down_proc callback);
+void easygui_set_on_printable_key_down(easygui_element* pElement, easygui_on_printable_key_down_proc callback);
 
 /// Registers the on_paint event callback.
-void easygui_register_on_paint(easygui_element* pElement, easygui_on_paint_proc callback);
+void easygui_set_on_paint(easygui_element* pElement, easygui_on_paint_proc callback);
 
 /// Registers the on_dirty event callback.
-void easygui_register_on_dirty(easygui_element* pElement, easygui_on_dirty_proc callback);
+void easygui_set_on_dirty(easygui_element* pElement, easygui_on_dirty_proc callback);
 
 /// Registers the on_hittest event callback.
-void easygui_register_on_hittest(easygui_element* pElement, easygui_on_hittest_proc callback);
+void easygui_set_on_hittest(easygui_element* pElement, easygui_on_hittest_proc callback);
 
 /// Registers the on_capture_mouse event callback.
-void easygui_register_on_capture_mouse(easygui_element* pElement, easygui_on_capture_mouse_proc callback);
+void easygui_set_on_capture_mouse(easygui_element* pElement, easygui_on_capture_mouse_proc callback);
 
 /// Registers the on_release_mouse event callback.
-void easygui_register_on_release_mouse(easygui_element* pElement, easygui_on_release_mouse_proc callback);
+void easygui_set_on_release_mouse(easygui_element* pElement, easygui_on_release_mouse_proc callback);
 
 /// Registers the on_capture_keyboard event callback.
-void easygui_register_on_capture_keyboard(easygui_element* pElement, easygui_on_capture_keyboard_proc callback);
+void easygui_set_on_capture_keyboard(easygui_element* pElement, easygui_on_capture_keyboard_proc callback);
 
 /// Registers the on_release_keyboard event callback.
-void easygui_register_on_release_keyboard(easygui_element* pElement, easygui_on_release_keyboard_proc callback);
+void easygui_set_on_release_keyboard(easygui_element* pElement, easygui_on_release_keyboard_proc callback);
 
 
 
@@ -693,6 +950,9 @@ bool easygui_is_point_inside_element(easygui_element* pElement, float absolutePo
 
 /// Finds the element under the given point taking mouse pass-through and hit testing into account.
 easygui_element* easygui_find_element_under_point(easygui_element* pTopLevelElement, float absolutePosX, float absolutePosY);
+
+/// Determines whether or not the given element is currently sitting directly under the mouse.
+bool easygui_is_element_under_mouse(easygui_element* pTopLevelElement);
 
 
 
@@ -768,6 +1028,24 @@ float easygui_get_width(const easygui_element* pElement);
 float easygui_get_height(const easygui_element* pElement);
 
 
+/// Sets the inner scale of the given element.
+///
+/// @remarks
+///     This does not scale the element itself - only it's children.
+void easygui_set_inner_scale(easygui_element* pElement, float innerScaleX, float innerScaleY);
+
+/// Retrieves the inner scale of the given element.
+///
+/// @remarks
+///     This is a direct accessor and not recursive. Use easygui_get_absolute_inner_scale() for the actual
+///     inner scale.
+void easygui_get_inner_scale(easygui_element* pElement, float* pInnerScaleXOut, float* pInnerScaleYOut);
+
+/// Recursively retrieves the absolute scale fo the given element.
+void easygui_get_absolute_inner_scale(easygui_element* pElement, float* pInnerScaleXOut, float* pInnerScaleYOut);
+
+
+
 /// Retrieves the absolute rectangle for the given element.
 easygui_rect easygui_get_absolute_rect(const easygui_element* pElement);
 
@@ -785,7 +1063,11 @@ easygui_rect easygui_get_local_rect(const easygui_element* pElement);
 //// Painting ////
 
 /// Registers the custom painting callbacks.
-void easygui_register_painting_callbacks(easygui_context* pContext, easygui_painting_callbacks callbacks);
+///
+/// @remarks
+///     This can only be called once, so it should always be done after initialization. This will fail if called
+///     more than once.
+bool easygui_register_painting_callbacks(easygui_context* pContext, void* pPaintingContext, easygui_painting_callbacks callbacks);
 
 
 /// Performs a recursive traversal of all visible elements in the given rectangle.
@@ -836,9 +1118,6 @@ void easygui_get_clip(easygui_element* pElement, easygui_rect* pRelativeRect, vo
 /// Sets the clipping rectangle to apply to all future draw operations on this element.
 void easygui_set_clip(easygui_element* pElement, easygui_rect relativeRect, void* pPaintData);
 
-/// Draws a line on the given element.
-void easygui_draw_line(easygui_element* pElement, float startX, float startY, float endX, float endY, float lineWidth, easygui_color color, void* pPaintData);
-
 /// Draws a rectangle on the given element.
 void easygui_draw_rect(easygui_element* pElement, easygui_rect relativeRect, easygui_color color, void* pPaintData);
 
@@ -864,9 +1143,62 @@ void easygui_draw_round_rect_with_outline(easygui_element* pElement, easygui_rec
 ///     calls to this function.
 ///     @par
 ///     \c textSizeInBytes can be -1 in which case the text string is treated as null terminated.
-void easygui_draw_text(easygui_element* pElement, const char* text, int textSizeInBytes, float posX, float posY, easygui_font font, easygui_color color, easygui_color backgroundColor, void* pPaintData);
+void easygui_draw_text(easygui_element* pElement, easygui_font* pFont, const char* text, int textLengthInBytes, float posX, float posY, easygui_color color, easygui_color backgroundColor, void* pPaintData);
+
+/// Draws an image.
+void easygui_draw_image(easygui_element* pElement, easygui_image* pImage, easygui_draw_image_args* pArgs, void* pPaintData);
 
 
+/// Creates a font resource.
+easygui_font* easygui_create_font(easygui_context* pContext, const char* family, unsigned int size, easygui_font_weight weight, easygui_font_slant slant, float rotation);
+
+/// Deletes a font resource.
+void easygui_delete_font(easygui_font* pFont);
+
+/// Retrieves the metrics of the given font.
+bool easygui_get_font_metrics(easygui_font* pFont, float scaleX, float scaleY, easygui_font_metrics* pMetricsOut);
+
+/// Retrieves the metrics of the given font based on the inner scale of the given element.
+bool easygui_get_font_metrics_by_element(easygui_font* pFont, easygui_element* pElement, easygui_font_metrics* pMetricsOut);
+
+/// Retrieves the metrics of the glyph for the given character when rendered with the given font.
+bool easygui_get_glyph_metrics(easygui_font* pFont, unsigned int utf32, float scaleX, float scaleY, easygui_glyph_metrics* pMetricsOut);
+
+/// Retrieves the metrics of the glyph for the given character when rendered with the given font at the scale of the given element's inner scale.
+bool easygui_get_glyph_metrics_by_element(easygui_font* pFont, unsigned int utf32, easygui_element* pElement, easygui_glyph_metrics* pMetricsOut);
+
+/// Retrieves the dimensions of the given string when drawn with the given font at the given scale.
+///
+/// @remarks
+///     When the length of the text is 0, the width will be set to 0 and the height will be set to the line height.
+///     @par
+///     <scaleX> and <scaleY> should be set to the scale at which the font will be drawn.
+bool easygui_measure_string(easygui_font* pFont, const char* text, size_t textLengthInBytes, float scaleX, float scaleY, float* pWidthOut, float* pHeightOut);
+
+/// Retrieves the dimensions fo the given string when drawing with the given font at the scale of the given element.
+bool easygui_measure_string_by_element(easygui_font* pFont, const char* text, size_t textLengthInBytes, easygui_element* pElement, float* pWidthOut, float* pHeightOut);
+
+/// Retrieves the position to place a text cursor based on the given point for the given string when drawn with the given font.
+bool easygui_get_text_cursor_position_from_point(easygui_font* pFont, const char* text, size_t textSizeInBytes, float maxWidth, float inputPosX, float scaleX, float scaleY, float* pTextCursorPosXOut, unsigned int* pCharacterIndexOut);
+
+/// Retrieves the position to palce a text cursor based on the character at the given index for the given string when drawn with the given font.
+bool easygui_get_text_cursor_position_from_char(easygui_font* pFont, const char* text, unsigned int characterIndex, float scaleX, float scaleY, float* pTextCursorPosXOut);
+
+
+
+/// Creates an image that can be passed to easy2d_draw_image().
+///
+/// @remarks
+///     Images are immutable. If the data of an image needs to change, the image must be deleted and re-created.
+///     @par
+///     The image data must be in 32-bit, RGBA format where each component is in the range of 0 - 255.
+easygui_image* easygui_create_image(easygui_context* pContext, unsigned int width, unsigned int height, unsigned int stride, const void* pData);
+
+/// Deletes the given image.
+void easygui_delete_image(easygui_image* pImage);
+
+/// Retrieves the size of the given image.
+void easygui_get_image_size(easygui_image* pImage, unsigned int* pWidthOut, unsigned int* pHeightOut);
 
 
 
@@ -879,7 +1211,7 @@ void easygui_draw_text(easygui_element* pElement, const char* text, int textSize
 //// Hit Testing and Layout ////
 
 /// An on_size event callback that resizes every child element to that of the parent.
-void easygui_on_size_fit_to_parent(easygui_element* pElement, float newWidth, float newHeight);
+void easygui_on_size_fit_children_to_parent(easygui_element* pElement, float newWidth, float newHeight);
 
 /// An on_hit_test event callback that can be used to always fail the mouse hit test.
 bool easygui_pass_through_hit_test(easygui_element* pElement, float mousePosX, float mousePosY);
@@ -903,9 +1235,6 @@ easygui_color easygui_rgba(easygui_byte r, easygui_byte g, easygui_byte b, easyg
 
 /// Creates a color object from a set of RGB color components.
 easygui_color easygui_rgb(easygui_byte r, easygui_byte g, easygui_byte b);
-
-/// Retrieves the size of this element and all of it's siblings.
-void easygui_get_self_and_siblings_size(const easygui_element* pElement, float* widthOut, float* heightOut);
 
 /// Clamps the given rectangle to another.
 easygui_rect easygui_clamp_rect(easygui_rect rect, easygui_rect other);
@@ -938,11 +1267,24 @@ easygui_rect easygui_make_inside_out_rect();
 /// Expands the given rectangle on all sides by the given amount.
 ///
 /// @remarks
-///     This will increase the width and height of the rectangle by amount x 2.
+///     This will increase the width and height of the rectangle by <amount> x 2.
 ///     @par
 ///     The growth amount can be negative, in which case it will be shrunk. Note that this does not do any checking to ensure the rectangle
 ///     contains positive dimensions after a shrink.
 easygui_rect easygui_grow_rect(easygui_rect rect, float amount);
+
+/// Scales the given rectangle.
+///
+/// @param scaleX [in] The scale to apply to <left> and <right>
+/// @param scaleY [in] The scale to apply to <top> and <bottom>
+///
+/// @remarks
+///     This will modify the <left> and <top> properties which means the rectangle will change position. To adjust only the size, scale the
+///     rectangle manually.
+easygui_rect easygui_scale_rect(easygui_rect rect, float scaleX, float scaleY);
+
+/// Offsets the given rectangle.
+easygui_rect easygui_offset_rect(easygui_rect rect, float offsetX, float offsetY);
 
 /// Creates a rectangle that contains both of the given rectangles.
 easygui_rect easygui_rect_union(easygui_rect rect0, easygui_rect rect1);
@@ -955,6 +1297,9 @@ easygui_rect easygui_rect_union(easygui_rect rect0, easygui_rect rect1);
 ///     each other, and if we use this function to determine if a point is contained within an element (which we do), we would end up having
 ///     this return true for both elements, which we don't want.
 bool easygui_rect_contains_point(easygui_rect rect, float posX, float posY);
+
+/// Determines whether or not two rectangles are equal.
+bool easygui_rect_equal(easygui_rect rect0, easygui_rect rect1);
 
 
 
@@ -969,13 +1314,13 @@ bool easygui_rect_contains_point(easygui_rect rect, float posX, float posY);
 ///
 /// @remarks
 ///     This is equivalent to easygui_create_context() followed by easygui_register_easy_draw_callbacks().
-easygui_context* easygui_create_context_easy_draw();
+easygui_context* easygui_create_context_easy_draw(easy2d_context* pDrawingContext);
 
 /// Registers the drawing callbacks for use with easy_draw.
 ///
 /// @remarks
 ///     The user data of each callback is assumed to be a pointer to an easydraw_surface object.
-void easygui_register_easy_draw_callbacks(easygui_context* pContext);
+void easygui_register_easy_draw_callbacks(easygui_context* pContext, easy2d_context* pDrawingContext);
 
 #endif
 

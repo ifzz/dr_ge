@@ -35,13 +35,14 @@ extern "C" {
 #endif
 
 #if defined(_MSC_VER)
-#define EASYUTIL_INLINE __inline
+#define EASYUTIL_INLINE static __inline
 #else
-#define EASYUTIL_INLINE inline
+#define EASYUTIL_INLINE static inline
 #endif
 
 
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <stdbool.h>
 
@@ -69,6 +70,9 @@ extern "C" {
     #ifndef UNUSED
     #define UNUSED(x) ((void)x)
     #endif
+
+    #define PRIVATE
+    #define PUBLIC
 #endif
 
 
@@ -84,16 +88,8 @@ extern "C" {
     #define easy_max(x, y) (((x) > (y)) ? (x) : (y))
     #endif
 
-    #ifndef min
-    #define min(x, y) (((x) < (y)) ? (x) : (y))
-    #endif
-
-    #ifndef max
-    #define max(x, y) (((x) > (y)) ? (x) : (y))
-    #endif
-
-    #ifndef clamp
-    #define clamp(x, low, high) (easy_max(low, easy_min(x, high)))
+    #ifndef easy_clamp
+    #define easy_clamp(x, low, high) (easy_max(low, easy_min(x, high)))
     #endif
 #endif
 
@@ -102,8 +98,12 @@ extern "C" {
 // MSVC Compatibility
 
 #ifndef EASYUTIL_NO_MSVC_COMPAT
+#ifndef _TRUNCATE
+#define _TRUNCATE ((size_t)-1)
+#endif
+
 /// A basic implementation of MSVC's strcpy_s().
-EASYUTIL_INLINE int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src)
+static int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src)
 {
     if (dst == 0) {
         return EINVAL;
@@ -118,17 +118,16 @@ EASYUTIL_INLINE int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src)
     
     char* iDst = dst;
     const char* iSrc = src;
-    size_t remainingSizeInBytes = dstSizeInBytes;
-    while (remainingSizeInBytes > 0 && iSrc[0] != '\0')
+    while (dstSizeInBytes > 0 && iSrc[0] != '\0')
     {
         iDst[0] = iSrc[0];
 
         iDst += 1;
         iSrc += 1;
-        remainingSizeInBytes -= 1;
+        dstSizeInBytes -= 1;
     }
 
-    if (remainingSizeInBytes > 0) {
+    if (dstSizeInBytes > 0) {
         iDst[0] = '\0';
     } else {
         dst[0] = '\0';
@@ -136,6 +135,146 @@ EASYUTIL_INLINE int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src)
     }
 
     return 0;
+}
+
+/// A basic implementation of MSVC's strncpy_s().
+static int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t count)
+{
+    if (dst == 0) {
+        return EINVAL;
+    }
+    if (dstSizeInBytes == 0) {
+        return EINVAL;
+    }
+    if (src == 0) {
+        dst[0] = '\0';
+        return EINVAL;
+    }
+    
+    if (count == ((size_t)-1)) {        // _TRUNCATE
+        count = dstSizeInBytes - 1;
+    }
+
+    char* iDst = dst;
+    const char* iSrc = src;
+    while (dstSizeInBytes > 0 && iSrc[0] != '\0' && count > 0)
+    {
+        iDst[0] = iSrc[0];
+
+        iDst += 1;
+        iSrc += 1;
+        dstSizeInBytes -= 1;
+        count -= 1;
+    }
+
+    if (dstSizeInBytes > 0) {
+        iDst[0] = '\0';
+    } else {
+        dst[0] = '\0';
+        return ERANGE;
+    }
+
+    return 0;
+}
+
+/// A basic implementation of MSVC's strcat_s().
+static int strcat_s(char* dst, size_t dstSizeInBytes, const char* src)
+{
+    if (dst == 0) {
+        return EINVAL;
+    }
+    if (dstSizeInBytes == 0) {
+        return ERANGE;
+    }
+    if (src == 0) {
+        return EINVAL;
+    }
+
+    char* iDst = dst;
+    while (dstSizeInBytes > 0 && iDst[0] != '\0')
+    {
+        iDst += 1;
+        dstSizeInBytes -= 1;
+    }
+
+    if (dstSizeInBytes == 0) {
+        return EINVAL;  // Unterminated.
+    }
+
+
+    const char* iSrc = src;
+    while (dstSizeInBytes > 0 && iSrc[0] != '\0')
+    {
+        iDst[0] = iSrc[0];
+
+        iDst += 1;
+        iSrc += 1;
+        dstSizeInBytes -= 1;
+    }
+
+    if (dstSizeInBytes > 0) {
+        iDst[0] = '\0';
+    } else {
+        return ERANGE;
+    }
+
+    return 0;
+}
+
+/// A basic implementation of MSVC's strncat_s()
+static int strncat_s(char* dst, size_t dstSizeInBytes, const char* src, size_t count)
+{
+    if (dst == 0) {
+        return EINVAL;
+    }
+    if (dstSizeInBytes == 0) {
+        return ERANGE;
+    }
+    if (src == 0) {
+        return EINVAL;
+    }
+
+    char* iDst = dst;
+    while (dstSizeInBytes > 0 && iDst[0] != '\0')
+    {
+        iDst += 1;
+        dstSizeInBytes -= 1;
+    }
+
+    if (dstSizeInBytes == 0) {
+        return EINVAL;  // Unterminated.
+    }
+
+
+    if (count == ((size_t)-1)) {        // _TRUNCATE
+        count = dstSizeInBytes - 1;
+    }
+
+    const char* iSrc = src;
+    while (dstSizeInBytes > 0 && iSrc[0] != '\0' && count > 0)
+    {
+        iDst[0] = iSrc[0];
+
+        iDst += 1;
+        iSrc += 1;
+        dstSizeInBytes -= 1;
+        count -= 1;
+    }
+
+    if (dstSizeInBytes > 0) {
+        iDst[0] = '\0';
+    } else {
+        return ERANGE;
+    }
+
+    return 0;
+}
+
+
+// A wrapper for _stricmp/strcasecmp
+EASYUTIL_INLINE int _stricmp(const char* string1, const char* string2)
+{
+    return strcasecmp(string1, string2);
 }
 #endif
 
@@ -145,6 +284,89 @@ EASYUTIL_INLINE int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src)
 
 /// Removes every occurance of the given character from the given string.
 void easyutil_strrmchar(char* str, char c);
+
+/// Finds the first non-whitespace character in the given string.
+const char* easyutil_first_non_whitespace(const char* str);
+
+/// Finds the first occurance of a whitespace character in the given string.
+const char* easyutil_first_whitespace(const char* str);
+
+
+/////////////////////////////////////////////////////////
+// Unicode Utilities
+
+/// Converts a UTF-32 character to UTF-16.
+///
+/// @param utf16 [in] A pointer to an array of at least two 16-bit values that will receive the UTF-16 character.
+///
+/// @return 2 if the returned character is a surrogate pair, 1 if it's a simple UTF-16 code point, or 0 if it's an invalid character.
+///
+/// @remarks
+///     It is assumed the <utf16> is large enough to hold at least 2 unsigned shorts. <utf16> will be padded with 0 for unused
+///     components.
+EASYUTIL_INLINE int utf32_to_utf16(unsigned int utf32, unsigned short utf16[2])
+{
+    if (utf16 == NULL) {
+        return 0;
+    }
+
+    if (utf32 < 0xD800 || (utf32 >= 0xE000 && utf32 <= 0xFFFF))
+    {
+        utf16[0] = (unsigned short)utf32;
+        utf16[1] = 0;
+        return 1;
+    }
+    else
+    {
+        if (utf32 >= 0x10000 && utf32 <= 0x10FFFF)
+        {
+            utf16[0] = (unsigned short)(0xD7C0 + (unsigned short)(utf32 >> 10));
+            utf16[1] = (unsigned short)(0xDC00 + (unsigned short)(utf32 & 0x3FF));
+            return 2;
+        }
+        else
+        {
+            // Invalid.
+            utf16[0] = 0;
+            utf16[0] = 0;
+            return 0;
+        }
+    }
+}
+
+/// Converts a UTF-16 character to UTF-32.
+EASYUTIL_INLINE unsigned int utf16_to_utf32(unsigned short utf16[2])
+{
+    if (utf16 == NULL) {
+        return 0;
+    }
+
+    if (utf16[0] < 0xD800 || utf16[0] > 0xDFFF)
+    {
+        return utf16[0];
+    }
+    else
+    {
+        if ((utf16[0] & 0xFC00) == 0xD800 && (utf16[1] & 0xFC00) == 0xDC00)
+        {
+            return ((unsigned int)utf16[0] << 10) + utf16[1] - 0x35FDC00;
+        }
+        else
+        {
+            // Invalid.
+            return 0;
+        }
+    }
+}
+
+/// Converts a UTF-16 surrogate pair to UTF-32.
+EASYUTIL_INLINE unsigned int utf16pair_to_utf32(unsigned short utf160, unsigned short utf161)
+{
+    unsigned short utf16[2];
+    utf16[0] = utf160;
+    utf16[1] = utf161;
+    return utf16_to_utf32(utf16);
+}
 
 
 /////////////////////////////////////////////////////////
@@ -180,9 +402,9 @@ EASYUTIL_INLINE void aligned_free(void* ptr)
 /////////////////////////////////////////////////////////
 // Key/Value Pair Parsing
 
-typedef unsigned int (* key_value_read_proc) (void* pUserData, void* pDataOut, unsigned int bytesToRead);
-typedef void         (* key_value_pair_proc) (void* pUserData, const char* key, const char* value);
-typedef void         (* key_value_error_proc)(void* pUserData, const char* message, unsigned int line);
+typedef size_t (* key_value_read_proc) (void* pUserData, void* pDataOut, size_t bytesToRead);
+typedef void   (* key_value_pair_proc) (void* pUserData, const char* key, const char* value);
+typedef void   (* key_value_error_proc)(void* pUserData, const char* message, unsigned int line);
 
 /// Parses a series of simple Key/Value pairs.
 ///
@@ -198,10 +420,31 @@ typedef void         (* key_value_error_proc)(void* pUserData, const char* messa
 ///      - Comments begin with the '#' character and continue until the end of the line.
 ///      - A key cannot contain spaces but are permitted in values.
 ///      - The value will have any leading and trailing whitespace trimmed.
-///      - A value can be wrapped in double-quote characters in which case the last double-quote characters acts as the end point.
+///      - A value can be wrapped in double-quote characters in which case the last double-quote character acts as the end point.
 ///     @par
 ///     If an error occurs, that line will be skipped and processing will continue.
 void easyutil_parse_key_value_pairs(key_value_read_proc onRead, key_value_pair_proc onPair, key_value_error_proc onError, void* pUserData);
+
+
+
+/////////////////////////////////////////////////////////
+// Basic Tokenizer
+
+/// Retrieves the first token in the given string.
+///
+/// @remarks
+///     This function is suitable for doing a simple whitespace tokenization of a null-terminated string.
+///     @par
+///     The return value is a pointer to one character past the last character of the next token. You can use the return value to execute
+///     this function in a loop to parse an entire string.
+///     @par
+///     <tokenOut> can be null. If the buffer is too small to contain the entire token it will be set to an empty string. The original
+///     input string combined with the return value can be used to reliably find the token.
+///     @par
+///     This will handle double-quoted strings, so a string such as "My \"Complex String\"" contains two tokens: "My" and "\"Complex String\"".
+///     @par
+///     This function has no dependencies.
+const char* easyutil_next_token(const char* tokens, char* tokenOut, unsigned int tokenOutSize);
 
 
 
@@ -212,22 +455,42 @@ void easyutil_parse_key_value_pairs(key_value_read_proc onRead, key_value_pair_p
 ///
 /// @remarks
 ///     On Windows this will typically be %APPDATA% and on Linux it will usually be ~/.config
-bool easyutil_get_config_folder_path(char* pathOut, unsigned int pathOutSize);
+bool easyutil_get_config_folder_path(char* pathOut, size_t pathOutSize);
 
 /// Retrieves the path of the user's log directory.
 ///
 /// @remarks
 ///     On Windows this will typically be %APPDATA% and on Linux it will usually be var/log
-bool easyutil_get_log_folder_path(char* pathOut, unsigned int pathOutSize);
+bool easyutil_get_log_folder_path(char* pathOut, size_t pathOutSize);
 
 
 
 /////////////////////////////////////////////////////////
 // DPI Awareness
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32)
 /// Win32 Only: Makes the application DPI aware.
 void win32_make_dpi_aware();
+
+/// Win32 Only: Retrieves the base DPI to use as a reference when calculating DPI scaling.
+void win32_get_base_dpi(int* pDPIXOut, int* pDPIYOut);
+
+/// Win32 Only: Retrieves the system-wide DPI.
+void win32_get_system_dpi(int* pDPIXOut, int* pDPIYOut);
+
+/// Win32 Only: Retrieves the actual DPI of the monitor at the given index.
+///
+/// @remarks
+///     If per-monitor DPI is not supported, the system wide DPI settings will be used instead.
+///     @par
+///     This runs in linear time.
+void win32_get_monitor_dpi(int monitor, int* pDPIXOut, int* pDPIYOut);
+
+/// Win32 Only: Retrieves the number of monitors active at the time of calling.
+///
+/// @remarks
+///     This runs in linear time.
+int win32_get_monitor_count();
 #endif
 
 
@@ -247,7 +510,7 @@ void easyutil_datetime_short(time_t t, char* strOut, unsigned int strOutSize);
 // Command Line
 //
 // The command line functions below are just simple iteration functions. This command line system is good for
-// simple command lines, but probably not best for programs requiring complex command line work.
+// simple command lines, but probably not the best for programs requiring complex command line work.
 //
 // For argv style command lines, parse_cmdline() will run without any heap allocations. With a Win32 style
 // command line there will be one malloc() per call fo parse_cmdline(). This is the only function that will do
@@ -286,16 +549,17 @@ void easyutil_datetime_short(time_t t, char* strOut, unsigned int strOutSize);
 // For segments such as "-abcd file.txt", "a", "b", "c", "d" will be sent with NULL values, and "file.txt" will be
 // posted with a NULL key.
 
-typedef struct
+typedef struct easyutil_cmdline easyutil_cmdline;
+struct easyutil_cmdline
 {
     // argv style.
     int argc;
     char** argv;
 
     // Win32 style
-    char* win32;
+    const char* win32;
 
-} easyutil_cmdline;
+};
 
 typedef bool easyutil_cmdline_parse_proc(const char* key, const char* value, void* pUserData);
 
@@ -304,10 +568,100 @@ typedef bool easyutil_cmdline_parse_proc(const char* key, const char* value, voi
 bool easyutil_init_cmdline(easyutil_cmdline* pCmdLine, int argc, char** argv);
 
 /// Initializes a command line object using a Win32 style command line.
-bool easyutil_init_cmdline_win32(easyutil_cmdline* pCmdLine, char* args);
+bool easyutil_init_cmdline_win32(easyutil_cmdline* pCmdLine, const char* args);
 
 /// Parses the given command line.
 void easyutil_parse_cmdline(easyutil_cmdline* pCmdLine, easyutil_cmdline_parse_proc callback, void* pUserData);
+
+
+
+
+
+/////////////////////////////////////////////////////////
+// Threading
+
+/// Puts the calling thread to sleep for approximately the given number of milliseconds.
+///
+/// @remarks
+///     This is not 100% accurate and should be considered an approximation.
+void easyutil_sleep(unsigned int milliseconds);
+
+
+/// Thread.
+typedef void* easyutil_thread;
+typedef int (* easyutil_thread_entry_proc)(void* pData);
+
+/// Creates and begins executing a new thread.
+///
+/// @remarks
+///     This will not return until the thread has entered into it's entry point.
+///     @par
+///     Creating a thread should be considered an expensive operation. For high performance, you should create threads
+///     and load time and cache them.
+easyutil_thread easyutil_create_thread(easyutil_thread_entry_proc entryProc, void* pData);
+
+/// Deletes the given thread.
+///
+/// @remarks
+///     This does not actually exit the thread, but rather deletes the memory that was allocated for the thread
+///     object returned by easyutil_create_thread().
+///     @par
+///     It is usually best to wait for the thread to terminate naturally with easyutil_wait_thread() before calling
+///     this function, however it is still safe to do something like the following.
+///     @code
+///     easyutil_delete_thread(easyutil_create_thread(my_thread_proc, pData))
+///     @endcode
+void easyutil_delete_thread(easyutil_thread thread);
+
+/// Waits for the given thread to terminate.
+void easyutil_wait_thread(easyutil_thread thread);
+
+/// Helper function for waiting for a thread and then deleting the handle after it has terminated.
+void easyutil_wait_and_delete_thread(easyutil_thread thread);
+
+
+
+/// Mutex
+typedef void* easyutil_mutex;
+
+/// Creates a mutex object.
+///
+/// @remarks
+///     If an error occurs, 0 is returned. Otherwise a handle the size of a pointer is returned.
+easyutil_mutex easyutil_create_mutex();
+
+/// Deletes a mutex object.
+void easyutil_delete_mutex(easyutil_mutex mutex);
+
+/// Locks the given mutex.
+void easyutil_lock_mutex(easyutil_mutex mutex);
+
+/// Unlocks the given mutex.
+void easyutil_unlock_mutex(easyutil_mutex mutex);
+
+
+
+/// Semaphore
+typedef void* easyutil_semaphore;
+
+/// Creates a semaphore object.
+///
+/// @remarks
+///     If an error occurs, 0 is returned. Otherwise a handle the size of a pointer is returned.
+easyutil_semaphore easyutil_create_semaphore(int initialValue);
+
+/// Deletes the given semaphore.
+void easyutil_delete_semaphore(easyutil_semaphore semaphore);
+
+/// Waits on the given semaphore object and decrements it's counter by one upon returning.
+///
+/// @remarks
+///     This will block so long as the counter is > 0.
+bool easyutil_wait_semaphore(easyutil_semaphore semaphore);
+
+/// Releases the given semaphore and increments it's counter by one up returning.
+bool easyutil_release_semaphore(easyutil_semaphore semaphore);
+
 
 
 
@@ -324,6 +678,38 @@ void easyutil_parse_cmdline(easyutil_cmdline* pCmdLine, easyutil_cmdline_parse_p
     private: \
         classname(const classname &); \
         classname & operator=(const classname &);
+
+
+#ifndef EASYUTIL_NO_MSVC_COMPAT
+extern "C++"
+{
+
+template <size_t dstSizeInBytes>
+int strcpy_s(char (&dst)[dstSizeInBytes], const char* src)
+{
+    return strcpy_s(dst, dstSizeInBytes, src);
+}
+
+template <size_t dstSizeInBytes>
+int strncpy_s(char (&dst)[dstSizeInBytes], const char* src, size_t count)
+{
+    return strncpy_s(dst, dstSizeInBytes, src, count);
+}
+
+template <size_t dstSizeInBytes>
+int strcat_s(char (&dst)[dstSizeInBytes], const char* src)
+{
+    return strcat_s(dst, dstSizeInBytes, src);
+}
+
+template <size_t dstSizeInBytes>
+int strncat_s(char (&dst)[dstSizeInBytes], const char* src, size_t count)
+{
+    return strncat_s(dst, dstSizeInBytes, src, count);
+}
+
+}
+#endif
 
 #endif
 
