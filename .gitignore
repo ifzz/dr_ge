@@ -1,10 +1,8 @@
 bin/ege*
 bin/data/
 build/vc14/
-build/ege_build.ilk
-build/ege_build.iobj
-build/ege_build.ipdb
-build/ege_build.pdb
+build/drge_build.ilk
+build/drge_build.iobj
+build/drge_build.ipdb
+build/drge_build.pdb
 docs/private/
-lib/
-tests/

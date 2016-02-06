@@ -1,1 +1,1 @@
-ege_build --prebuild
+drge_build --prebuild

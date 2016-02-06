@@ -1,1 +1,1 @@
-ege_build --postbuild
+drge_build --postbuild
