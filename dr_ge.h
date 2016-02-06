@@ -26,6 +26,11 @@
 #include "source/drge_context.h"
 #include "source/drge_platform_layer.h"
 
+#ifndef DR_GE_DISABLE_EDITOR
+#include "../dr_appkit/dr_appkit.h"
+#include "source/editor/drge_editor.h"
+#endif  //DR_GE_DISABLE_EDITOR
+
 
 #ifdef DR_GE_IMPLEMENTATION
 #include "source/drge_context.c"
@@ -39,6 +44,13 @@
 
 #define DR_VFS_IMPLEMENTATION
 #include "../dr_libs/dr_vfs.h"
+
+#ifndef DR_GE_DISABLE_EDITOR
+#include "source/editor/drge_editor.c"
+
+#define DR_APPKIT_IMPLEMENTATION
+#include "../dr_appkit/dr_appkit.h"
+#endif  //DR_GE_DISABLE_EDITOR
 #endif  //DR_GE_IMPLEMENTATION
 
 #endif  //dr_ge_h
