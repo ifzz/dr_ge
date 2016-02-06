@@ -18,11 +18,12 @@ focus as much on keeping things simple and ultra light-weight.
 There are very few dependencies because that would complicate the build system.
 There are, however, a few dependencies that are important or simple enough to
 allow:
- * dr_libs (https://github.com/mackron)
+ * dr_libs (https://github.com/mackron/dr_libs)
+ * dr_appkit (Editing tools only) (https://github.com/mackron/dr_appkit)
  * stb libraries (https://github.com/nothings/stb)
    * stb_image
    * stb_vorbis
- 
+
 Note that all of the above libraries are included in the source tree directly
 so there is no need to compile those separately.
  
