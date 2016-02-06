@@ -3,13 +3,29 @@
 #ifndef dr_ge_h
 #define dr_ge_h
 
+// These #defines enable us to load large files on Linux platforms. They need to be placed before including any headers.
+#ifndef _WIN32
+#ifndef _LARGEFILE64_SOURCE
+#define _LARGEFILE64_SOURCE
+#endif
+
+#ifndef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 64
+#endif
+#endif
+
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <assert.h>
 
 #include "../dr_libs/dr_util.h"
 #include "../dr_libs/dr_path.h"
+#include "../dr_libs/dr_vfs.h"
 
 #include "source/drge_context.h"
 #include "source/drge_platform_layer.h"
+
 
 #ifdef DR_GE_IMPLEMENTATION
 #include "source/drge_context.c"
@@ -20,6 +36,9 @@
 
 #define DR_PATH_IMPLEMENTATION
 #include "../dr_libs/dr_path.h"
+
+#define DR_VFS_IMPLEMENTATION
+#include "../dr_libs/dr_vfs.h"
 #endif  //DR_GE_IMPLEMENTATION
 
 #endif  //dr_ge_h

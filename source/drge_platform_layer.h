@@ -27,7 +27,7 @@ drge_window* drge_create_window(drge_context* pContext, const char* pTitle, unsi
 void drge_delete_window(drge_window* pWindow);
 
 // Retrieves a pointer to the dr_ge context that owns the given window.
-drge_context* lt_get_window_context(drge_window* pWindow);
+drge_context* drge_get_window_context(drge_window* pWindow);
 
 
 #ifdef _WIN32

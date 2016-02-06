@@ -42,3 +42,35 @@ void drge_step(drge_context* pContext);
 
 // Renders the game based on it's current state.
 void drge_render(drge_context* pContext);
+
+
+// Retrieves a pointer to the object representing the file system of the given context.
+drvfs_context* drge_get_vfs(drge_context* pContext);
+
+// Determines whether or not the game is running in portable mode.
+bool drge_is_portable(drge_context* pContext);
+
+
+// Posts a log message.
+void drge_log(drge_context* pContext, const char* message);
+
+// Posts a formatted log message.
+void drge_logf(drge_context* pContext, const char* format, ...);
+
+// Posts a warning log message.
+void drge_warning(drge_context* pContext, const char* message);
+
+// Posts a formatted warning log message.
+void drge_warningf(drge_context* pContext, const char* format, ...);
+
+// Posts an error log message.
+void drge_error(drge_context* pContext, const char* message);
+
+// Posts a formatted error log message.
+void drge_errorf(drge_context* pContext, const char* format, ...);
+
+
+// Retrieves the path of the directory that contains the log file.
+//
+// The returned string will be different depending on whether or not DR_GE_PORTABLE is set.
+void drge_get_log_file_folder_path(drge_context* pContext, char* pathOut, size_t pathOutSize);
