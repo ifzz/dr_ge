@@ -26,6 +26,9 @@ struct drge_context
     // Whether or not terminal output is disabled.
     bool isTerminalOutputDisabled;
 
+    // Whether or not the context is wanting to close. This is the variable that controls the main game loop.
+    bool wantsToClose;
+
 
     //// Config ////
 
@@ -55,7 +58,7 @@ static size_t drge_load_config_read(void* pUserData, void* pDataOut, size_t byte
 
     size_t bytesRead;
     drvfs_read(pData->pConfigFile, pDataOut, bytesToRead, &bytesRead);
-        
+
     return bytesRead;
 }
 
@@ -154,6 +157,7 @@ static drge_context* drge_create_context_cmdline(dr_cmdline cmdline)
     pContext->isPortable = dr_cmdline_key_exists(&cmdline, "portable");
 #endif
     pContext->isTerminalOutputDisabled = dr_cmdline_key_exists(&cmdline, "silent");
+    pContext->wantsToClose = false;
 
 
     // The file system. The lowest priority base path is always the directory containing the executable.
@@ -167,7 +171,7 @@ static drge_context* drge_create_context_cmdline(dr_cmdline cmdline)
     if (!dr_get_executable_path(executableDirPath, sizeof(executableDirPath))) {
         // This is actually a critical error because we need a reliable relative path to load assets and whatnot.
         free(pContext);
-        return NULL;    
+        return NULL;
     }
 
     drvfs_add_base_directory(pContext->pVFS, drpath_base_path(executableDirPath));
@@ -263,6 +267,25 @@ int drge_run_editor(drge_context* pContext)
 }
 
 
+bool drge_wants_to_close(drge_context* pContext)
+{
+    if (pContext == NULL) {
+        return false;
+    }
+
+    return pContext->wantsToClose;
+}
+
+void drge_request_close(drge_context* pContext)
+{
+    if (pContext == NULL) {
+        return;
+    }
+
+    pContext->wantsToClose = true;
+}
+
+
 static int drge_startup_and_run_cmdline(dr_cmdline cmdline)
 {
     drge_context* pContext = drge_create_context_cmdline(cmdline);
@@ -311,7 +334,7 @@ void drge_step(drge_context* pContext)
         return;
     }
 
-    double dtSeconds = drge_tick_timer(pContext->pTimer);
+    //double dtSeconds = drge_tick_timer(pContext->pTimer);
 }
 
 void drge_render(drge_context* pContext)
@@ -378,7 +401,7 @@ void drge_logf(drge_context* pContext, const char* format, ...)
     {
         char msg[4096];
         vsnprintf(msg, sizeof(msg), format, args);
-        
+
         drge_log(pContext, msg);
     }
     va_end(args);
@@ -400,7 +423,7 @@ void drge_warningf(drge_context* pContext, const char* format, ...)
     {
         char msg[4096];
         vsnprintf(msg, sizeof(msg), format, args);
-        
+
         drge_warning(pContext, msg);
     }
     va_end(args);
@@ -422,7 +445,7 @@ void drge_errorf(drge_context* pContext, const char* format, ...)
     {
         char msg[4096];
         vsnprintf(msg, sizeof(msg), format, args);
-        
+
         drge_error(pContext, msg);
     }
     va_end(args);

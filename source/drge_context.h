@@ -27,6 +27,19 @@ int drge_run_game(drge_context* pContext);
 int drge_run_editor(drge_context* pContext);
 
 
+// Determines if the given context is pending closing.
+//
+// This will return true after a prior call to drge_request_close().
+bool drge_wants_to_close(drge_context* pContext);
+
+// Lets the context know that it should close after processing the frame it's currently running.
+//
+// This is the proper way to escape from the main game loop. Note that this is not exit from the
+// loop immediately, but instead waits until the current frame is finished so that it can leave
+// the loop cleanly.
+void drge_request_close(drge_context* pContext);
+
+
 // Helper function for creating a context and running the game.
 int drge_startup_and_run(int argc, char** argv);
 

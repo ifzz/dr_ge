@@ -174,9 +174,9 @@ void* drge_get_window_hdc(drge_window* pWindow)
 
 
 
-int drge_main_loop(drge_context* pGame)
+int drge_main_loop(drge_context* pContext)
 {
-    for (;;)
+    while (!drge_wants_to_close(pContext))
     {
         // Handle window events.
         MSG msg;
@@ -191,7 +191,7 @@ int drge_main_loop(drge_context* pGame)
         }
 
         // After handling the next event in the queue we let the game know it should do the next frame.
-        drge_do_frame(pGame);
+        drge_do_frame(pContext);
     }
 
     return 0;
@@ -239,6 +239,193 @@ double drge_tick_timer(drge_timer* pTimer)
 }
 #endif
 
+#ifndef _WIN32
+#include <X11/Xlib.h>
+
+struct drge_window
+{
+    // A pointer to the game object that owns the window.
+    drge_context* pContext;
+
+    // A handle to the X11 window.
+    Window x11Window;
+};
+
+
+
+// The reference count for how many times drge_init_window_system() has been called.
+int g_X11InitCounter = 0;
+
+// The global display.
+Display* g_X11Display = NULL;
+
+// The atom for the WM_DELETE_WINDOW event so we can cleanly handle the close button on the window.
+Atom g_WM_DELETE_WINDOW = 0;
+
+
+bool drge_init_window_system()
+{
+    // Check if it's already initialized.
+    if (g_X11Display != NULL) {
+        g_X11InitCounter += 1;
+        return true;
+    }
+
+    g_X11Display = XOpenDisplay(NULL);
+    if (g_X11Display == NULL) {
+        return false;
+    }
+
+    g_WM_DELETE_WINDOW = XInternAtom(g_X11Display, "WM_DELETE_WINDOW", False);
+
+    g_X11InitCounter = 1;
+    return true;
+}
+
+void drge_uninit_window_system()
+{
+    if (g_X11Display == NULL) {
+        return;
+    }
+
+    if (g_X11InitCounter > 0) {
+        g_X11InitCounter -= 1;
+    } else {
+        assert(false);  // If you have triggered this assert it means you have not correctly matched your drge_init_window_system() and drge_uninit_window_system() calls.
+    }
+
+    if (g_X11InitCounter == 0)
+    {
+        XCloseDisplay(g_X11Display);
+        g_X11Display = NULL;
+    }
+}
+
+
+drge_window* drge_create_window(drge_context* pContext, const char* pTitle, unsigned int resolutionX, unsigned int resolutionY, unsigned int options)
+{
+    XSetWindowAttributes wa;
+    wa.colormap          = CopyFromParent;
+    wa.border_pixel      = 0;
+    wa.event_mask        = StructureNotifyMask | SubstructureNotifyMask | ExposureMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask | PointerMotionMask | ButtonMotionMask | FocusChangeMask | PropertyChangeMask;
+    wa.override_redirect = false;
+
+    Window x11Window = XCreateWindow(g_X11Display, RootWindow(g_X11Display, DefaultScreen(g_X11Display)), 0, 0, resolutionX, resolutionY, 0, CopyFromParent, InputOutput, CopyFromParent, CWBorderPixel | CWColormap | CWEventMask | CWOverrideRedirect, &wa);
+    if (x11Window == 0) {
+        return NULL;
+    }
+
+    // So we can handle the close button properly...
+    XSetWMProtocols(g_X11Display, x11Window, &g_WM_DELETE_WINDOW, 1);
+
+    // Set the title.
+    XStoreName(g_X11Display, x11Window, pTitle);
+
+    // TODO: Handle options.
+    (void)options;
+
+    // Show the window.
+    XMapWindow(g_X11Display, x11Window);
+
+
+
+    // At this point the window should be in the correct position and at the correct size. It should now be safe to create the window
+    // object and show the window.
+    drge_window* pWindow = malloc(sizeof(*pWindow));
+    if (pWindow == NULL) {
+        return NULL;
+    }
+
+    pWindow->pContext  = pContext;
+    pWindow->x11Window = x11Window;
+
+    return pWindow;
+}
+
+void drge_delete_window(drge_window* pWindow)
+{
+    if (pWindow == NULL) {
+        return;
+    }
+
+    XDestroyWindow(g_X11Display, pWindow->x11Window);
+    free(pWindow);
+}
+
+
+drge_context* drge_get_window_context(drge_window* pWindow)
+{
+    if (pWindow == NULL) {
+        return NULL;
+    }
+
+    return pWindow->pContext;
+}
+
+
+
+int drge_main_loop(drge_context* pContext)
+{
+    while (!drge_wants_to_close(pContext))
+    {
+        // Handle window events.
+        int eventCount = XPending(g_X11Display);
+        if (eventCount > 0)
+        {
+            XEvent e;
+            XNextEvent(g_X11Display, &e);
+
+            switch (e.type)
+            {
+                case ClientMessage:
+                {
+                    if (e.xclient.data.l[0] == (long)g_WM_DELETE_WINDOW) {
+                        drge_request_close(pContext);
+                    }
+                } break;
+            }
+        }
+
+        // After handling the next event in the queue we let the game know it should do the next frame.
+        drge_do_frame(pContext);
+    }
+
+    return 0;
+}
+
+
+
+struct drge_timer
+{
+    long long unused;
+};
+
+drge_timer* drge_create_timer()
+{
+    drge_timer* pTimer = malloc(sizeof(*pTimer));
+    if (pTimer == NULL) {
+        return NULL;
+    }
+
+    pTimer->unused = 0;
+
+    return pTimer;
+}
+
+void drge_delete_timer(drge_timer* pTimer)
+{
+    free(pTimer);
+}
+
+double drge_tick_timer(drge_timer* pTimer)
+{
+    if (pTimer == NULL) {
+        return 0;
+    }
+
+    return 0;
+}
+#endif
 
 
 
