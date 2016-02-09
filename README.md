@@ -20,7 +20,7 @@ Building the engine is easy - just clone the dr_ge repository and either:
  - Add dr_ge.c to your project like you would any other source file; or
  - Do something like the following in one .c file:
 
-    ```
+    ```c
     #define DR_GE_IMPLEMENTATION
     #include "dr_ge.h"
     ```
