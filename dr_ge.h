@@ -40,7 +40,6 @@
 //   When this is left unset, the internal copy of dr_libs and dr_appkit will be used to build the engine. This is not recommended
 //   for engine developers because the main repositories are where the most up-to-date versions of these libraries are located.
 
-
 #ifndef dr_ge_h
 #define dr_ge_h
 
@@ -133,6 +132,21 @@
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 #ifdef DR_GE_IMPLEMENTATION
+// stb_image
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_NO_STDIO
+#include "source/external/stb_image.h"
+
+// stb_vorbis. This is a special case because if we place the implementation here it results in compiler
+// errors on the Windows build. Suspecting it's due to conflicting types, but not sure. To address this
+// we just place the header here and then place the implementation down the bottom.
+#define STB_VORBIS_HEADER_ONLY
+#define STB_VORBIS_NO_STDIO
+#include "source/external/stb_vorbis.c"
+
+
+
+// dr_ge source files.
 #include "source/drge_context.c"
 #include "source/drge_platform_layer.c"
 
@@ -185,6 +199,9 @@
 #include "source/external/dr_appkit/source/dr_appkit_inner.h"
 #include "source/external/dr_fsw.h"
 #endif
+
+// stb_vorbis implementation.
+#include "source/external/stb_vorbis.c"
 
 #endif  //DR_GE_DISABLE_EDITOR
 #endif  //DR_GE_IMPLEMENTATION
