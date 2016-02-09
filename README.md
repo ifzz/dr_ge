@@ -25,7 +25,8 @@ Building the engine is easy - just clone the dr_ge repository and either:
     #include "dr_ge.h"
     ```
 
-You may need to link to some system level libraries 
+You may need to link to some system level libraries which are detailed in
+dr_ge.h.
 
 In the future cloning repositories will be optional and the entire engine,
 including dependencies, will be wholly contained within a single .h file.
