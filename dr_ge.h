@@ -1,5 +1,26 @@
 // Public domain. See "unlicense" statement at the end of this file.
 
+// OPTIONS
+//
+// #define DR_GE_DISABLE_EDITOR
+//   Excludes the editor from the build. On Linux, this removes the dependency on GTK.
+//
+// #define DR_GE_PORTABLE
+//   Builds a portable version of the engine. That is, configures the engine such that it stores configs, saves, logs, etc. relative
+//   to the executable location rather than the user directory.
+//
+// #define DR_GE_USE_EXTERNAL_REPOS (Engine Developers Only)
+//   Uses external repositories for dr_libs and dr_appkit which are assumed to be located in the same directory as the dr_ge
+//   repository, such as:
+//     <root directory>
+//       - dr_ge
+//       - dr_libs
+//       - dr_appkit
+//
+//   When this is unset (the default), the internal copy of each repo is used. This is not recommended because errors will be reported
+//   with respect to the internal files, however those errors would need to be fixed in the main repositories instead. This can cause
+//   annoying confusion, so if you're actively developing dr_libs, dr_appkit and dr_ge, you best use this option.
+
 #ifndef dr_ge_h
 #define dr_ge_h
 
@@ -19,15 +40,25 @@
 #include <stdarg.h>
 #include <assert.h>
 
+#ifdef DR_GE_USE_EXTERNAL_REPOS
 #include "../dr_libs/dr_util.h"
 #include "../dr_libs/dr_path.h"
 #include "../dr_libs/dr_vfs.h"
+#else
+#include "source/external/dr_libs/dr_util.h"
+#include "source/external/dr_libs/dr_path.h"
+#include "source/external/dr_libs/dr_vfs.h"
+#endif
 
 #include "source/drge_context.h"
 #include "source/drge_platform_layer.h"
 
 #ifndef DR_GE_DISABLE_EDITOR
-#include "../dr_appkit/dr_appkit.h"
+#ifdef DR_GE_USE_EXTERNAL_REPOS
+//#include "../dr_appkit/dr_appkit.h"
+#else
+//#include "source/external/dr_appkit/dr_appkit.h"
+#endif
 #include "source/editor/drge_editor.h"
 #endif  //DR_GE_DISABLE_EDITOR
 
@@ -36,20 +67,32 @@
 #include "source/drge_context.c"
 #include "source/drge_platform_layer.c"
 
+// dr_libs
 #define DR_UTIL_IMPLEMENTATION
-#include "../dr_libs/dr_util.h"
-
 #define DR_PATH_IMPLEMENTATION
-#include "../dr_libs/dr_path.h"
-
 #define DR_VFS_IMPLEMENTATION
+
+#ifdef DR_GE_USE_EXTERNAL_REPOS
+#include "../dr_libs/dr_util.h"
+#include "../dr_libs/dr_path.h"
 #include "../dr_libs/dr_vfs.h"
+#else
+#include "source/external/dr_libs/dr_util.h"
+#include "source/external/dr_libs/dr_path.h"
+#include "source/external/dr_libs/dr_vfs.h"
+#endif
 
 #ifndef DR_GE_DISABLE_EDITOR
 #include "source/editor/drge_editor.c"
 
+// dr_appkit
 #define DR_APPKIT_IMPLEMENTATION
-#include "../dr_appkit/dr_appkit.h"
+#ifdef DR_GE_USE_EXTERNAL_REPOS
+//#include "../dr_appkit/dr_appkit.h"
+#else
+//#include "source/external/dr_appkit/dr_appkit.h"
+#endif
+
 #endif  //DR_GE_DISABLE_EDITOR
 #endif  //DR_GE_IMPLEMENTATION
 
