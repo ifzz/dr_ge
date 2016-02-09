@@ -4,7 +4,7 @@ still very early in development and incomplete.)
 
 dr_ge is a simple, ultra light-weight game engine written in C and released
 into the public domain. Here's what makes it different from the rest.
- * Simple build system
+ * A simple build system with no external dependencies
  * A small code base
  * A simple, clean, no BS API
  * Public domain
