@@ -1,5 +1,13 @@
 // Public domain. See "unlicense" statement at the end of this file.
 
+// USAGE
+//
+// Building the engine is easy - just do something like the following in one .c file.
+//   #define DR_GE_IMPLEMENTATION
+//   #include "dr_ge.h"
+//
+//
+//
 // OPTIONS
 //
 // #define DR_GE_DISABLE_EDITOR
