@@ -4,7 +4,7 @@ still very early in development and incomplete.)
 
 dr_ge is a simple, ultra light-weight game engine written in C and released
 into the public domain. Here's what makes it different from the rest.
- * A simple build system with no external dependencies
+ * A simple build system with no external dependencies (see below)
  * A small code base
  * A simple, clean, no BS API
  * Public domain
@@ -16,17 +16,27 @@ focus as much on keeping things simple and ultra light-weight.
 
 
 # Dependencies
-There are very few dependencies because that would complicate the build system.
-There are, however, a few dependencies that are important or simple enough to
-allow:
+There are no dependencies that need to be built external to the engine, however
+there are a few dependencies whose repositories you'll need to clone for the
+time being while the engine's still in early development:
  * dr_libs (https://github.com/mackron/dr_libs)
- * dr_appkit (Editing tools only) (https://github.com/mackron/dr_appkit)
+ * dr_appkit (Optional: Only used for editing tools) (https://github.com/mackron/dr_appkit)
+ 
+With these repositories you should clone them to a common folder so that your
+directory structure looks like the following:
+ - <root directory>
+   - dr_ge
+   - dr_libs
+   - dr_appkit (only if including editing tools with the build)
+
+Later on when these libraries become a bit more stable they will be added to
+dr_ge's repository directly.
+ 
+Other dependencies are included with dr_ge's repository directly and should
+not require any special handling at all, but are listed here for credit:
  * stb libraries (https://github.com/nothings/stb)
    * stb_image
    * stb_vorbis
-
-Note that all of the above libraries are included in the source tree directly
-so there is no need to compile those separately.
  
  
 # Non-dependencies
@@ -38,3 +48,14 @@ first rule. These libraries include:
  * **FreeType on Windows** (GDI's font APIs aren't that bad)
  * **libpng** and **zlib** (stb_image and miniz are good enough, and are easier to build)
    
+   
+# Building
+Building the engine is easy:
+ 1) Clone dr_ge, dr_libs and dr_appkit into a common directory
+ 2) Add dr_ge/dr_ge.c to your project as you would like any other source file, or do
+something like the following in a single .c file:
+    #define DR_GE_IMPLEMENTATION
+	#include "dr_ge.h"
+	
+In the future cloning repositories will be optional and the entire engine,
+including dependencies, will be wholly contained within a single .h file.
