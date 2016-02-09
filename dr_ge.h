@@ -25,9 +25,10 @@
 //       - dr_libs
 //       - dr_appkit
 //
-//   When this is unset (the default), the internal copy of each repo is used. This is not recommended because errors will be reported
-//   with respect to the internal files, however those errors would need to be fixed in the main repositories instead. This can cause
-//   annoying confusion, so if you're actively developing dr_libs, dr_appkit and dr_ge, you best use this option.
+//   When this is left unset, the internal copy of each dr_libs and dr_appkit will be used to build the engine. This is not
+//   recommended for engine developers because the main repositories are where the most up-to-date versions of these libraries
+//   are located.
+
 
 #ifndef dr_ge_h
 #define dr_ge_h
@@ -49,7 +50,7 @@
 #include <stdarg.h>
 #include <assert.h>
 
-// Platform headers.
+// Platform headers. Never expose these publicly. Ever.
 #ifdef DR_GE_IMPLEMENTATION
 #ifdef _WIN32
 #include <windows.h>
@@ -77,12 +78,22 @@
 #include "../dr_libs/dr_vfs.h"
 #include "../dr_libs/dr_gui.h"
 #include "../dr_libs/dr_2d.h"
+#include "../dr_libs/dr_audio.h"
+#include "../dr_libs/dr_wav.h"
+#include "../dr_libs/dr_flac.h"
+#include "../dr_libs/dr_mtl.h"
+#include "../dr_libs/dr_math.h"
 #else
-#include "source/external/dr_libs/dr_util.h"
-#include "source/external/dr_libs/dr_path.h"
-#include "source/external/dr_libs/dr_vfs.h"
-#include "source/external/dr_libs/dr_gui.h"
-#include "source/external/dr_libs/dr_2d.h"
+#include "source/external/dr_util.h"
+#include "source/external/dr_path.h"
+#include "source/external/dr_vfs.h"
+#include "source/external/dr_gui.h"
+#include "source/external/dr_2d.h"
+#include "source/external/dr_audio.h"
+#include "source/external/dr_wav.h"
+#include "source/external/dr_flac.h"
+#include "source/external/dr_mtl.h"
+#include "source/external/dr_math.h"
 #endif
 
 // dr_ge headers.
@@ -92,8 +103,10 @@
 // dr_ge editor headers.
 #ifndef DR_GE_DISABLE_EDITOR
 #ifdef DR_GE_USE_EXTERNAL_REPOS
+#include "../dr_libs/dr_fsw.h"
 #include "../dr_appkit/source/dr_appkit_inner.h"
 #else
+#include "source/external/dr_fsw.h"
 #include "source/external/dr_appkit/source/dr_appkit_inner.h"
 #endif
 
@@ -118,6 +131,11 @@
 #define DR_VFS_IMPLEMENTATION
 #define DR_GUI_IMPLEMENTATION
 #define DR_2D_IMPLEMENTATION
+#define DR_AUDIO_IMPLEMENTATION
+#define DR_WAV_IMPLEMENTATION
+#define DR_FLAC_IMPLEMENTATION
+#define DR_MTL_IMPLEMENTATION
+#define DR_MATH_IMPLEMENTATION
 
 #ifdef DR_GE_USE_EXTERNAL_REPOS
 #include "../dr_libs/dr_util.h"
@@ -125,23 +143,36 @@
 #include "../dr_libs/dr_vfs.h"
 #include "../dr_libs/dr_gui.h"
 #include "../dr_libs/dr_2d.h"
+#include "../dr_libs/dr_audio.h"
+#include "../dr_libs/dr_wav.h"
+#include "../dr_libs/dr_flac.h"
+#include "../dr_libs/dr_mtl.h"
+#include "../dr_libs/dr_math.h"
 #else
-#include "source/external/dr_libs/dr_util.h"
-#include "source/external/dr_libs/dr_path.h"
-#include "source/external/dr_libs/dr_vfs.h"
-#include "source/external/dr_libs/dr_gui.h"
-#include "source/external/dr_libs/dr_2d.h"
+#include "source/external/dr_util.h"
+#include "source/external/dr_path.h"
+#include "source/external/dr_vfs.h"
+#include "source/external/dr_gui.h"
+#include "source/external/dr_2d.h"
+#include "source/external/dr_audio.h"
+#include "source/external/dr_wav.h"
+#include "source/external/dr_flac.h"
+#include "source/external/dr_mtl.h"
+#include "source/external/dr_math.h"
 #endif
 
 #ifndef DR_GE_DISABLE_EDITOR
 #include "source/editor/drge_editor.c"
 
 // dr_appkit
+#define DR_FSW_IMPLEMENTATION
 #define DR_APPKIT_IMPLEMENTATION
 #ifdef DR_GE_USE_EXTERNAL_REPOS
+#include "../dr_libs/dr_fsw.h"
 #include "../dr_appkit/source/dr_appkit_inner.h"
 #else
 #include "source/external/dr_appkit/source/dr_appkit_inner.h"
+#include "source/external/dr_fsw.h"
 #endif
 
 #endif  //DR_GE_DISABLE_EDITOR

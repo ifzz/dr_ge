@@ -123,14 +123,20 @@ void prebuild(drge_build_context* pContext)
             do
             {
                 char relativePathSrc[DRVFS_MAX_PATH];
-                drpath_copy_and_append(relativePathSrc, sizeof(relativePathSrc), "../../dr_appkit/source", drpath_file_name(i.info.absolutePath));
-
                 char relativePathDst[DRVFS_MAX_PATH];
+                drpath_copy_and_append(relativePathSrc, sizeof(relativePathSrc), "../../dr_appkit/source", drpath_file_name(i.info.absolutePath));
                 drpath_copy_and_append(relativePathDst, sizeof(relativePathDst), "../source/external/dr_appkit/source", drpath_file_name(i.info.absolutePath));
 
                 copy_and_log_file(pContext, relativePathSrc, relativePathDst);
             } while (drvfs_next(pContext->pVFS, &i));
         }
+
+        // dr_gui WIP.
+        copy_and_log_file(pContext, "../../dr_libs/wip/dr_gui_scrollbar.h", "../source/external/wip/dr_gui_scrollbar.h");
+        copy_and_log_file(pContext, "../../dr_libs/wip/dr_gui_tab_bar.h", "../source/external/wip/dr_gui_tab_bar.h");
+        copy_and_log_file(pContext, "../../dr_libs/wip/dr_gui_text_layout.h", "../source/external/wip/dr_gui_text_layout.h");
+        copy_and_log_file(pContext, "../../dr_libs/wip/dr_gui_textbox.h", "../source/external/wip/dr_gui_textbox.h");
+        copy_and_log_file(pContext, "../../dr_libs/wip/dr_gui_tree_view.h", "../source/external/wip/dr_gui_tree_view.h");
     }
 
     printf("--- Pre-Build Step Complete ---\n");
