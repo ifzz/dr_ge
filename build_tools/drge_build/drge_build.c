@@ -81,6 +81,11 @@ void copy_and_log_file(drge_build_context* pContext, const char* srcPath, const 
     assert(srcPath != NULL);
     assert(dstPath != NULL);
 
+    // Make sure the directory exists.
+    char dstPathDir[DRVFS_MAX_PATH];
+    drpath_copy_base_path(dstPath, dstPathDir, sizeof(dstPathDir));
+    drvfs_create_directory(pContext->pVFS, dstPathDir);
+
     if (drvfs_copy_file(pContext->pVFS, srcPath, dstPath, false)) {
         printf("  Copied file %s to %s\n", srcPath, dstPath);
     } else {
@@ -107,6 +112,25 @@ void prebuild(drge_build_context* pContext)
         copy_and_log_file(pContext, "../../dr_libs/dr_math.h", "../source/external/dr_math.h");
         copy_and_log_file(pContext, "../../dr_libs/dr_path.h", "../source/external/dr_path.h");
         copy_and_log_file(pContext, "../../dr_libs/dr_util.h", "../source/external/dr_util.h");
+
+        // dr_appkit.
+        copy_and_log_file(pContext, "../../dr_appkit/dr_appkit.h", "../source/external/dr_appkit/dr_appkit.h");
+        copy_and_log_file(pContext, "../../dr_appkit/dr_appkit.c", "../source/external/dr_appkit/dr_appkit.c");
+
+        drvfs_iterator i;
+        if (drvfs_begin(pContext->pVFS, "../../dr_appkit/source", &i))
+        {
+            do
+            {
+                char relativePathSrc[DRVFS_MAX_PATH];
+                drpath_copy_and_append(relativePathSrc, sizeof(relativePathSrc), "../../dr_appkit/source", drpath_file_name(i.info.absolutePath));
+
+                char relativePathDst[DRVFS_MAX_PATH];
+                drpath_copy_and_append(relativePathDst, sizeof(relativePathDst), "../source/external/dr_appkit/source", drpath_file_name(i.info.absolutePath));
+
+                copy_and_log_file(pContext, relativePathSrc, relativePathDst);
+            } while (drvfs_next(pContext->pVFS, &i));
+        }
     }
 
     printf("--- Pre-Build Step Complete ---\n");

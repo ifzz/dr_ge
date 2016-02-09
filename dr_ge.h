@@ -35,34 +35,71 @@
 #endif
 #endif
 
+// Standard headers.
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <assert.h>
 
+// Platform headers.
+#ifdef DR_GE_IMPLEMENTATION
+#ifdef _WIN32
+#include <windows.h>
+#endif
+#ifdef __linux__
+#include <gdk/gdk.h>
+#include <gtk/gtk.h>
+#endif
+#endif
+
+// Platform libraries, for simplifying MSVC builds.
+#ifdef _WIN32
+#if defined(_MSC_VER) || defined(__clang__)
+#pragma comment(lib, "msimg32.lib")
+#endif
+#endif
+
+
+// dr_libs headers.
+#define DR_GUI_INCLUDE_WIP
+
 #ifdef DR_GE_USE_EXTERNAL_REPOS
 #include "../dr_libs/dr_util.h"
 #include "../dr_libs/dr_path.h"
 #include "../dr_libs/dr_vfs.h"
+#include "../dr_libs/dr_gui.h"
+#include "../dr_libs/dr_2d.h"
 #else
 #include "source/external/dr_libs/dr_util.h"
 #include "source/external/dr_libs/dr_path.h"
 #include "source/external/dr_libs/dr_vfs.h"
+#include "source/external/dr_libs/dr_gui.h"
+#include "source/external/dr_libs/dr_2d.h"
 #endif
 
+// dr_ge headers.
 #include "source/drge_context.h"
 #include "source/drge_platform_layer.h"
 
+// dr_ge editor headers.
 #ifndef DR_GE_DISABLE_EDITOR
 #ifdef DR_GE_USE_EXTERNAL_REPOS
-//#include "../dr_appkit/dr_appkit.h"
+#include "../dr_appkit/source/dr_appkit_inner.h"
 #else
-//#include "source/external/dr_appkit/dr_appkit.h"
+#include "source/external/dr_appkit/source/dr_appkit_inner.h"
 #endif
+
 #include "source/editor/drge_editor.h"
 #endif  //DR_GE_DISABLE_EDITOR
 
 
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//
+// IMPLEMENTATION
+//
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 #ifdef DR_GE_IMPLEMENTATION
 #include "source/drge_context.c"
 #include "source/drge_platform_layer.c"
@@ -71,15 +108,21 @@
 #define DR_UTIL_IMPLEMENTATION
 #define DR_PATH_IMPLEMENTATION
 #define DR_VFS_IMPLEMENTATION
+#define DR_GUI_IMPLEMENTATION
+#define DR_2D_IMPLEMENTATION
 
 #ifdef DR_GE_USE_EXTERNAL_REPOS
 #include "../dr_libs/dr_util.h"
 #include "../dr_libs/dr_path.h"
 #include "../dr_libs/dr_vfs.h"
+#include "../dr_libs/dr_gui.h"
+#include "../dr_libs/dr_2d.h"
 #else
 #include "source/external/dr_libs/dr_util.h"
 #include "source/external/dr_libs/dr_path.h"
 #include "source/external/dr_libs/dr_vfs.h"
+#include "source/external/dr_libs/dr_gui.h"
+#include "source/external/dr_libs/dr_2d.h"
 #endif
 
 #ifndef DR_GE_DISABLE_EDITOR
@@ -88,9 +131,9 @@
 // dr_appkit
 #define DR_APPKIT_IMPLEMENTATION
 #ifdef DR_GE_USE_EXTERNAL_REPOS
-//#include "../dr_appkit/dr_appkit.h"
+#include "../dr_appkit/source/dr_appkit_inner.h"
 #else
-//#include "source/external/dr_appkit/dr_appkit.h"
+#include "source/external/dr_appkit/source/dr_appkit_inner.h"
 #endif
 
 #endif  //DR_GE_DISABLE_EDITOR
