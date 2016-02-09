@@ -19,8 +19,11 @@ focus as much on keeping things simple and ultra light-weight.
 Building the engine is easy - just clone the dr_ge repository and either:
  - Add dr_ge.c to your project like you would any other source file; or
  - Do something like the following in one .c file:
+
+    ```
     #define DR_GE_IMPLEMENTATION
-	#include "dr_ge.h"
+    #include "dr_ge.h"
+    ```
 
 You may need to link to some system level libraries 
 
