@@ -6,6 +6,18 @@
 //   #define DR_GE_IMPLEMENTATION
 //   #include "dr_ge.h"
 //
+// There may be a few system level dependencies, but they should all be ubiquitous enough that you shouldn't need to worry about
+// installing anything.
+//
+// Windows Dependencies:
+//   - msimg32.lib (Only if building the editing tools.) This should always be pre-installed, but may need to be explicitly added
+//     to your list of link libraries if the linker can't find AlphaBlend.
+//
+// Linux Dependencies:
+//   - pthreads
+//   - Xlib
+//   - GTK+ 3 (Only if building the editing tools)
+//
 //
 //
 // OPTIONS
@@ -25,9 +37,8 @@
 //       - dr_libs
 //       - dr_appkit
 //
-//   When this is left unset, the internal copy of each dr_libs and dr_appkit will be used to build the engine. This is not
-//   recommended for engine developers because the main repositories are where the most up-to-date versions of these libraries
-//   are located.
+//   When this is left unset, the internal copy of dr_libs and dr_appkit will be used to build the engine. This is not recommended
+//   for engine developers because the main repositories are where the most up-to-date versions of these libraries are located.
 
 
 #ifndef dr_ge_h
