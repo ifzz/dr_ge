@@ -193,9 +193,14 @@ int drge_run(drge_context* pContext)
         return -1;  // No context.
     }
 
-    if (dr_cmdline_key_exists(&pContext->cmdline, "editor")) {
+#ifndef DR_GE_DISABLE_EDITOR
+    if (dr_cmdline_key_exists(&pContext->cmdline, "editor"))
+    {
         return drge_open_and_run_editor(pContext);
-    } else {
+    }
+    else
+#endif
+    {
         return drge_run_game(pContext);
     }
 }
