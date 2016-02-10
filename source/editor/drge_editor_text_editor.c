@@ -115,7 +115,6 @@ drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char*
     drgui_textbox_set_cursor_color(pTEData->pTextBox, pTheme->defaultText.textColor);
     drgui_textbox_set_font(pTEData->pTextBox, pTheme->defaultText.pFont);
     drgui_textbox_set_border_width(pTEData->pTextBox, 0);
-    drgui_textbox_set_padding(pTEData->pTextBox, 2);
 
     char* fileData = drvfs_open_and_read_text_file(pEditor->pContext->pVFS, fileAbsolutePath, NULL);
     drgui_textbox_set_text(pTEData->pTextBox, fileData);
