@@ -109,6 +109,7 @@
 // dr_ge headers.
 #include "source/drge_context.h"
 #include "source/drge_platform_layer.h"
+#include "source/drge_assets.h"
 
 // dr_ge editor headers.
 #ifndef DR_GE_DISABLE_EDITOR
@@ -154,6 +155,7 @@
 // dr_ge source files.
 #include "source/drge_context.c"
 #include "source/drge_platform_layer.c"
+#include "source/drge_assets.c"
 
 // dr_libs
 #define DR_UTIL_IMPLEMENTATION

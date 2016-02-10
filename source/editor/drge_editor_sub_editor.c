@@ -19,6 +19,9 @@ drge_subeditor* drge_editor_create_sub_editor(drge_editor* pEditor, const char* 
         return NULL;
     }
 
+    // Validate the path. Must be absolute.
+    assert(drpath_is_absolute(fileAbsolutePath));
+
 
     // A sub-editor is just a dr_appkit tool.
     drgui_element* pAKTool = ak_create_tool(pEditor->pAKApp, NULL, type, sizeof(drge_subeditor_data), NULL);

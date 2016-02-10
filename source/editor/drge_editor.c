@@ -1,5 +1,28 @@
 // Public domain. See "unlicense" statement at the end of dr_ge.h.
 
+
+// Opens all of the files specified on the command line as "--editor <file>".
+bool drge_editor__open_files_on_cmdline_callback(const char* key, const char* value, void* pUserData)
+{
+    drge_editor* pEditor = pUserData;
+
+    if (strcmp(key, "editor") == 0) {
+        drge_editor_open_file(pEditor, value);  // Doesn't matter if this fails - we just silently ignore it.
+    }
+
+    return true;
+}
+
+void drge_editor__open_files_on_cmdline(drge_editor* pEditor)
+{
+    if (pEditor == NULL) {
+        return;
+    }
+
+    dr_parse_cmdline(&pEditor->pContext->cmdline, drge_editor__open_files_on_cmdline_callback, pEditor);
+}
+
+
 // Called when the main window is wanting to close.
 void drge_editor__on_main_window_close(ak_window* pMainWindow)
 {
@@ -29,7 +52,7 @@ const char* drge_editor__on_get_default_config(ak_application* pAKApp)
         "Window application 0 0 1280 720 true \"dr_ge Editor\" MainWindow\n"
         "    Panel hsplit 22\n"
         "        Panel\n"
-        "            Tool \"DRGE.Editor.Menu.Main\"\n"
+        "            Tool \"DRGE.Editor.MainMenu\"\n"
         "            /Tool\n"
         "        /Panel\n"
         "\n"
@@ -68,10 +91,35 @@ bool drge_editor__on_run(ak_application* pAKApp)
     ak_window_set_on_close(pEditor->pMainWindow, drge_editor__on_main_window_close);
 
 
-    // TODO: Parse the command line and look for every occurance of "--editor" and open files for those that specify a file name with it.
+    // We need to open every file specified on the command line as "--editor <file>".
+    drge_editor__open_files_on_cmdline(pEditor);
 
     return true;
 }
+
+drge_subeditor* drge_editor__create_sub_editor_by_type(drge_editor* pEditor, const char* filePath, drge_asset_type type)
+{
+    // Sub-editors expect the file path to be absolute. We'll need to handle that.
+    char absolutePath[DRVFS_MAX_PATH];
+    if (!drvfs_find_absolute_path(pEditor->pContext->pVFS, filePath, absolutePath, sizeof(absolutePath))) {
+        drge_errorf(pEditor->pContext, "Failed to find absolute path of \"%s\". Check that the file exists.", filePath);
+        return NULL;
+    }
+
+    // We'll treat unknown types as text files.
+    if (type == drge_asset_type_text || type == drge_asset_type_unknown) {
+        return drge_editor_create_text_editor(pEditor, filePath);
+    }
+
+    if (type == drge_asset_type_image) {
+        return drge_editor_create_image_editor(pEditor, filePath);
+    }
+
+
+    // Unsupported type.
+    return NULL;
+}
+
 
 drge_editor* drge_create_editor(drge_context* pContext)
 {
@@ -130,13 +178,21 @@ void drge_editor_close(drge_editor* pEditor)
 
 bool drge_editor_open_file(drge_editor* pEditor, const char* filePath)
 {
+    if (pEditor == NULL || filePath == NULL) {
+        return false;
+    }
+
     if (drge_editor_try_focus_file_by_path(pEditor, filePath)) {
         return true;    // The file is already open.
     }
 
-    // The file is not already open so we'll need to create a tool of the appropriate type and link it to the file.
+    // If we get here it means the file is not already open and we need to open it.
+    drge_subeditor* pSubEditor = drge_editor__create_sub_editor_by_type(pEditor, filePath, drge_get_asset_type_from_path(filePath));
+    if (pSubEditor == NULL) {
+        return false;
+    }
 
-    return false;
+    return true;
 }
 
 bool drge_editor_try_focus_file_by_path(drge_editor* pEditor, const char* filePath)
