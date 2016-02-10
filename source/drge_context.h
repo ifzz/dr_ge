@@ -15,7 +15,7 @@ struct drge_context
 
     // We want to use high resolution timing when stepping the game, however this is actually a platform
     // specific thing. We use an abstraction here to keep this file clean of platform-specific code. This
-    // is defined in lt_platform_layout.c.
+    // is defined in drge_platform_layer.c.
     drge_timer* pTimer;
 
     // The file system context we'll use for loading all files.
