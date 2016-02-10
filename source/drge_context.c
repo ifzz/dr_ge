@@ -1,41 +1,5 @@
 // Public domain. See "unlicense" statement at the end of dr_ge.h.
 
-struct drge_context
-{
-    // The object representing the command line that was used to initialize this context.
-    dr_cmdline cmdline;
-
-    // The main game window. dr_ge currently only supports a single game window.
-    drge_window* pWindow;
-
-    // We want to use high resolution timing when stepping the game, however this is actually a platform
-    // specific thing. We use an abstraction here to keep this file clean of platform-specific code. This
-    // is defined in lt_platform_layout.c.
-    drge_timer* pTimer;
-
-    // The file system context we'll use for loading all files.
-    drvfs_context* pVFS;
-
-    // The log file.
-    drvfs_file* pLogFile;
-
-
-    // Keeps track of whether or not we are running portable mode.
-    bool isPortable;
-
-    // Whether or not terminal output is disabled.
-    bool isTerminalOutputDisabled;
-
-    // Whether or not the context is wanting to close. This is the variable that controls the main game loop.
-    bool wantsToClose;
-
-
-    //// Config ////
-
-    // The game name. This is loaded from the config and used as the window title.
-    char name[64];
-};
-
 static void drge_load_default_config(drge_context* pContext)
 {
     if (pContext == NULL) {
@@ -151,6 +115,10 @@ static drge_context* drge_create_context_cmdline(dr_cmdline cmdline)
     pContext->pVFS     = NULL;
     pContext->pLogFile = NULL;
 
+#ifndef DR_GE_DISABLE_EDITOR
+    pContext->pEditor  = NULL;
+#endif
+
 #ifdef DR_GE_PORTABLE
     pContext->isPortable = true;
 #else
@@ -226,7 +194,7 @@ int drge_run(drge_context* pContext)
     }
 
     if (dr_cmdline_key_exists(&pContext->cmdline, "editor")) {
-        return drge_run_editor(pContext);
+        return drge_open_and_run_editor(pContext);
     } else {
         return drge_run_game(pContext);
     }
@@ -255,16 +223,31 @@ int drge_run_game(drge_context* pContext)
     return result;
 }
 
-int drge_run_editor(drge_context* pContext)
+#ifndef DR_GE_DISABLE_EDITOR
+int drge_open_and_run_editor(drge_context* pContext)
 {
-    if (pContext == NULL) {
+    if (pContext == NULL || pContext->pEditor != NULL) {
         return -1;
     }
 
-    // TODO: Open and run the editor.
+    // The editor should not already be open.
+    if (pContext->pEditor != NULL) {
+        return -2;
+    }
 
-    return 0;
+    pContext->pEditor = drge_create_editor(pContext);
+    if (pContext->pEditor == NULL) {
+        return -3;
+    }
+
+    int result = drge_editor_run(pContext->pEditor);
+
+    drge_delete_editor(pContext->pEditor);
+    pContext->pEditor = NULL;
+
+    return result;
 }
+#endif
 
 
 bool drge_wants_to_close(drge_context* pContext)

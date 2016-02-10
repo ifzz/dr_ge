@@ -1,6 +1,51 @@
 // Public domain. See "unlicense" statement at the end of dr_ge.h.
 
+typedef struct drge_window drge_window;
+typedef struct drge_timer  drge_timer;
+typedef struct drge_editor drge_editor;
+
 typedef struct drge_context drge_context;
+struct drge_context
+{
+    // The object representing the command line that was used to initialize this context.
+    dr_cmdline cmdline;
+
+    // The main game window. dr_ge currently only supports a single game window.
+    drge_window* pWindow;
+
+    // We want to use high resolution timing when stepping the game, however this is actually a platform
+    // specific thing. We use an abstraction here to keep this file clean of platform-specific code. This
+    // is defined in lt_platform_layout.c.
+    drge_timer* pTimer;
+
+    // The file system context we'll use for loading all files.
+    drvfs_context* pVFS;
+
+    // The log file.
+    drvfs_file* pLogFile;
+
+
+#ifndef DR_GE_DISABLE_EDITOR
+    // A pointer to the object representing the editor.
+    drge_editor* pEditor;
+#endif
+
+
+    // Keeps track of whether or not we are running portable mode.
+    bool isPortable;
+
+    // Whether or not terminal output is disabled.
+    bool isTerminalOutputDisabled;
+
+    // Whether or not the context is wanting to close. This is the variable that controls the main game loop.
+    bool wantsToClose;
+
+
+    //// Config ////
+
+    // The game name. This is loaded from the config and used as the window title.
+    char name[64];
+};
 
 
 // drge_create_context()
@@ -23,9 +68,10 @@ int drge_run(drge_context* pContext);
 // Enters into the main game loop.
 int drge_run_game(drge_context* pContext);
 
+#ifndef DR_GE_DISABLE_EDITOR
 // Enters into the main application loop for the editor of the given context.
-int drge_run_editor(drge_context* pContext);
-
+int drge_open_and_run_editor(drge_context* pContext);
+#endif
 
 // Determines if the given context is pending closing.
 //
