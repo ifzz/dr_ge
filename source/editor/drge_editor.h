@@ -32,3 +32,12 @@ int drge_editor_run(drge_editor* pEditor);
 
 // Closes the given editor.
 void drge_editor_close(drge_editor* pEditor);
+
+
+// Opens the file at the given path. Returns false if the file could not be opened. If the file is already
+// open, the editor will place focus on that file and return true.
+bool drge_editor_open_file(drge_editor* pEditor, const char* filePath);
+
+// Checks if the file at the given path is already open, and if so places focus on it. Returns true if the
+// file is already open; false otherwise.
+bool drge_editor_try_focus_file_by_path(drge_editor* pEditor, const char* filePath);

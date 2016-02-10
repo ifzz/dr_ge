@@ -122,8 +122,25 @@ int drge_editor_run(drge_editor* pEditor)
     return ak_run_application(pEditor->pAKApp);
 }
 
-
 void drge_editor_close(drge_editor* pEditor)
 {
     ak_post_quit_message(pEditor->pAKApp, 0);
+}
+
+
+bool drge_editor_open_file(drge_editor* pEditor, const char* filePath)
+{
+    if (drge_editor_try_focus_file_by_path(pEditor, filePath)) {
+        return true;    // The file is already open.
+    }
+
+    // The file is not already open so we'll need to create a tool of the appropriate type and link it to the file.
+
+    return false;
+}
+
+bool drge_editor_try_focus_file_by_path(drge_editor* pEditor, const char* filePath)
+{
+    // TODO: Implement Me.
+    return false;
 }
