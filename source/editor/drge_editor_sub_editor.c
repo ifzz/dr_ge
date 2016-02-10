@@ -2,6 +2,9 @@
 
 typedef struct
 {
+    // A pointer to the editor that owns the sub-editor.
+    drge_editor* pEditor;
+
     // The path of the file the sub-editor is linked to. Can be an empty string in which case it is assumed to be free-floating.
     char fileAbsolutePath[DRVFS_MAX_PATH];
 
@@ -36,6 +39,12 @@ drge_subeditor* drge_editor_create_sub_editor(drge_editor* pEditor, const char* 
         return NULL;
     }
 
+    pSEData->pEditor = pEditor;
+
+    // The text of the sub-editor's tab is based on the title of the tool so we'll need to update that. The last argument is
+    // whether or not to mark the title as modified by placing an asterix at the end.
+    drge_subeditor_update_title((drge_subeditor*)pAKTool, false);
+
     return (drge_subeditor*)pAKTool;
 }
 
@@ -46,4 +55,68 @@ void drge_editor_delete_sub_editor(drge_subeditor* pSubEditor)
     }
 
     ak_delete_tool((drgui_element*)pSubEditor);
+}
+
+
+drge_editor* drge_subeditor_get_editor(drge_subeditor* pSubEditor)
+{
+    drge_subeditor_data* pSEData = ak_get_tool_extra_data((drgui_element*)pSubEditor);
+    if (pSEData == NULL) {
+        return NULL;
+    }
+
+    return pSEData->pEditor;
+}
+
+const char* drge_subeditor_get_absolute_path(drge_subeditor* pSubEditor)
+{
+    assert(ak_is_tool_of_type((drgui_element*)pSubEditor, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR));
+
+    drge_subeditor_data* pSEData = ak_get_tool_extra_data((drgui_element*)pSubEditor);
+    if (pSEData == NULL) {
+        return NULL;
+    }
+
+    return pSEData->fileAbsolutePath;
+}
+
+
+void drge_subeditor_update_title(drge_subeditor* pSubEditor, bool isModified)
+{
+    if (pSubEditor == NULL) {
+        return;
+    }
+
+    char title[64];
+    strncpy_s(title, sizeof(title), drpath_file_name(drge_subeditor_get_absolute_path(pSubEditor)), _TRUNCATE);
+    if (title[0] == '\0') {
+        strcpy_s(title, sizeof(title) - 1, "[New File]");   // -1 to ensure we leave room for the asterix in case isModified is true.
+    }
+
+    if (isModified) {
+        strncat_s(title, sizeof(title), "*", _TRUNCATE);
+    }
+
+    ak_set_tool_title((drgui_element*)pSubEditor, title);
+}
+
+
+bool drge_subeditor_is_read_only(drge_subeditor* pSubEditor)
+{
+    drge_subeditor_data* pSEData = ak_get_tool_extra_data((drgui_element*)pSubEditor);
+    if (pSEData == NULL) {
+        return false;
+    }
+
+    const char* absolutePath = drge_subeditor_get_absolute_path(pSubEditor);
+    if (absolutePath == NULL || absolutePath[0] == '\0') {
+        return false;
+    }
+
+    drvfs_file_info fi;
+    if (drvfs_get_file_info(drge_subeditor_get_editor(pSubEditor)->pContext->pVFS, absolutePath, &fi)) {
+        return (fi.attributes & DRVFS_FILE_ATTRIBUTE_READONLY) != 0;
+    }
+
+    return false;
 }
