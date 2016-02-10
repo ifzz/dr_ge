@@ -68,7 +68,7 @@ bool drge_editor__on_run(ak_application* pAKApp)
     ak_window_set_on_close(pEditor->pMainWindow, drge_editor__on_main_window_close);
 
 
-    // TODO: Parse the command line and look for every occurance of "--editor" and open files those that specify a file name with it.
+    // TODO: Parse the command line and look for every occurance of "--editor" and open files for those that specify a file name with it.
 
     return true;
 }
