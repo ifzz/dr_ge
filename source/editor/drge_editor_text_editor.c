@@ -7,22 +7,6 @@ typedef struct
 
 } drge_text_subeditor_data;
 
-void drge_text_editor__tb_on_mouse_enter(drgui_element* pTB)
-{
-    ak_window* pWindow = ak_get_element_window(pTB);
-    assert(pWindow != NULL);
-
-    ak_set_window_cursor(pWindow, ak_cursor_type_ibeam);
-}
-
-void drge_text_editor__tb_on_mouse_leave(drgui_element* pTB)
-{
-    ak_window* pWindow = ak_get_element_window(pTB);
-    assert(pWindow != NULL);
-
-    ak_set_window_cursor(pWindow, ak_cursor_type_default);
-}
-
 void drge_text_editor__on_handle_action(drgui_element* pTextEditor, const char* pActionName)
 {
     drge_text_subeditor_data* pTEData = ak_get_tool_extra_data((drgui_element*)pTextEditor);
@@ -103,8 +87,6 @@ drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char*
 
     drge_text_subeditor_data* pTEData = ak_get_tool_extra_data((drgui_element*)pTextEditor);
     pTEData->pTextBox = drgui_create_textbox(ak_get_application_gui(pEditor->pAKApp), (drgui_element*)pTextEditor, 0, NULL);
-    drgui_set_on_mouse_enter(pTEData->pTextBox, drge_text_editor__tb_on_mouse_enter);
-    drgui_set_on_mouse_leave(pTEData->pTextBox, drge_text_editor__tb_on_mouse_leave);
     drgui_textbox_set_vertical_align(pTEData->pTextBox, drgui_text_layout_alignment_top);
     
     
