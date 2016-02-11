@@ -183,7 +183,7 @@ int drge_main_loop(drge_context* pContext)
         if (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE))
         {
             if (msg.message == WM_QUIT) {
-                return msg.wParam;  // Received a quit message.
+                return (int)msg.wParam;  // Received a quit message.
             }
 
             TranslateMessage(&msg);
