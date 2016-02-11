@@ -243,7 +243,7 @@ drgui_element* drge_editor__get_or_create_focused_tab_group(drge_editor* pEditor
         return NULL;
     }
 
-    ak_panel_set_type(pEditor->pFocusedTabGroup, "EditorGroup");
+    ak_panel_set_type(pEditor->pFocusedTabGroup, "DRGE.Editor.TabGroup");
     ak_panel_set_tab_options(pEditor->pFocusedTabGroup, AK_PANEL_OPTION_SHOW_TOOL_TABS | AK_PANEL_OPTION_SHOW_CLOSE_BUTTON_ON_TABS);
 
     // TODO: Add a close button graphic to tabs.
