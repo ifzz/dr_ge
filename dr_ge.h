@@ -90,7 +90,7 @@
 #include "../dr_libs/dr_2d.h"
 #include "../dr_libs/dr_audio.h"
 #include "../dr_libs/dr_wav.h"
-#include "../dr_libs/dr_flac.h"
+//#include "../dr_libs/dr_flac.h"
 #include "../dr_libs/dr_mtl.h"
 #include "../dr_libs/dr_math.h"
 #else
@@ -101,7 +101,7 @@
 #include "source/external/dr_2d.h"
 #include "source/external/dr_audio.h"
 #include "source/external/dr_wav.h"
-#include "source/external/dr_flac.h"
+//#include "source/external/dr_flac.h"
 #include "source/external/dr_mtl.h"
 #include "source/external/dr_math.h"
 #endif
@@ -177,7 +177,7 @@
 #include "../dr_libs/dr_2d.h"
 #include "../dr_libs/dr_audio.h"
 #include "../dr_libs/dr_wav.h"
-#include "../dr_libs/dr_flac.h"
+//#include "../dr_libs/dr_flac.h"
 #include "../dr_libs/dr_mtl.h"
 #include "../dr_libs/dr_math.h"
 #else
@@ -188,7 +188,7 @@
 #include "source/external/dr_2d.h"
 #include "source/external/dr_audio.h"
 #include "source/external/dr_wav.h"
-#include "source/external/dr_flac.h"
+//#include "source/external/dr_flac.h"
 #include "source/external/dr_mtl.h"
 #include "source/external/dr_math.h"
 #endif
