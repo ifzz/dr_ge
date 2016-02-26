@@ -2,7 +2,7 @@
 
 // ABOUT
 //
-// This is a simple library is for loading .wav files and retrieving it's audio data. It does not explicitly support
+// This is a simple library for loading .wav files and retrieving it's audio data. It does not explicitly support
 // every possible combination of data formats and configurations, but should work fine for the most common ones.
 //
 //
@@ -46,7 +46,9 @@
 //
 //
 // TODO:
-// - Have the seek callback take an absolute position rather than an offset. This way it will match with dr_flac.
+// - Add seamless support for w64. This is very similar to WAVE, but supports files >2GB. There's no real reason this
+//   can't be added to dr_wav and have it work seamlessly.
+// - Look at making this not use the heap.
 
 #ifndef dr_wav_h
 #define dr_wav_h
