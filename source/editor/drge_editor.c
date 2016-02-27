@@ -99,6 +99,8 @@ bool drge_editor__on_run(ak_application* pAKApp)
 
 void drge_editor__on_key_down(ak_application* pAKApp, ak_window* pWindow, drgui_key key, int stateFlags)
 {
+    (void)pWindow;
+
     drge_editor* pEditor = *(drge_editor**)ak_get_application_extra_data(pAKApp);
     assert(pEditor != NULL);
 
@@ -163,6 +165,8 @@ void drge_editor__on_handle_action(ak_application* pAKApp, const char* pActionNa
 
 static int drge_editor__on_exec(ak_application* pApplication, const char* cmd)
 {
+    (void)pApplication;
+
     char func[256];
     cmd = dr_next_token(cmd, func, sizeof(func));
     if (cmd == NULL) {
@@ -329,7 +333,7 @@ bool drge_editor_open_file(drge_editor* pEditor, const char* filePath)
         return false;
     }
 
-    
+
     drge_subeditor* pSubEditor = drge_editor__create_sub_editor_by_type(pEditor, filePath, drge_get_asset_type_from_path(filePath));
     if (pSubEditor == NULL) {
         return false;
