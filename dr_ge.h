@@ -14,8 +14,9 @@
 //     to your list of link libraries if the linker can't find AlphaBlend.
 //
 // Linux Dependencies:
-//   - pthreads
-//   - Xlib
+//   - pthread
+//   - X11
+//   - dl
 //   - GTK+ 3 (Only if building the editing tools)
 //
 //
