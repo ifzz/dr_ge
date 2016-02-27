@@ -112,6 +112,7 @@ void prebuild(drge_build_context* pContext)
         copy_and_log_file(pContext, "../../dr_libs/dr_math.h", "../source/external/dr_math.h");
         copy_and_log_file(pContext, "../../dr_libs/dr_path.h", "../source/external/dr_path.h");
         copy_and_log_file(pContext, "../../dr_libs/dr_util.h", "../source/external/dr_util.h");
+        copy_and_log_file(pContext, "../../dr_libs/dr_vulkan.h", "../source/external/dr_vulkan.h");
 
         // dr_appkit.
         copy_and_log_file(pContext, "../../dr_appkit/dr_appkit.h", "../source/external/dr_appkit/dr_appkit.h");

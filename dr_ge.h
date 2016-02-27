@@ -93,6 +93,7 @@
 #include "../dr_libs/dr_flac.h"
 #include "../dr_libs/dr_mtl.h"
 #include "../dr_libs/dr_math.h"
+#include "../dr_libs/dr_vulkan.h"
 #else
 #include "source/external/dr_util.h"
 #include "source/external/dr_path.h"
@@ -104,6 +105,7 @@
 #include "source/external/dr_flac.h"
 #include "source/external/dr_mtl.h"
 #include "source/external/dr_math.h"
+#include "source/external/dr_vulkan.h"
 #endif
 
 // dr_ge headers.
@@ -168,6 +170,10 @@
 #define DR_FLAC_IMPLEMENTATION
 #define DR_MTL_IMPLEMENTATION
 #define DR_MATH_IMPLEMENTATION
+#define DR_VULKAN_IMPLEMENTATION
+
+#define DR_WAV_NO_STDIO
+#define DR_FLAC_NO_STDIO
 
 #ifdef DR_GE_USE_EXTERNAL_REPOS
 #include "../dr_libs/dr_util.h"
@@ -180,6 +186,7 @@
 #include "../dr_libs/dr_flac.h"
 #include "../dr_libs/dr_mtl.h"
 #include "../dr_libs/dr_math.h"
+#include "../dr_libs/dr_vulkan.h"
 #else
 #include "source/external/dr_util.h"
 #include "source/external/dr_path.h"
@@ -191,6 +198,7 @@
 #include "source/external/dr_flac.h"
 #include "source/external/dr_mtl.h"
 #include "source/external/dr_math.h"
+#include "source/external/dr_vulkan.h"
 #endif
 
 #ifndef DR_GE_DISABLE_EDITOR
