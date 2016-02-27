@@ -112,6 +112,7 @@
 // dr_ge headers.
 #include "source/drge_context.h"
 #include "source/drge_platform_layer.h"
+#include "source/drge_graphics.h"
 #include "source/drge_assets.h"
 
 // dr_ge editor headers.
@@ -158,6 +159,7 @@
 // dr_ge source files.
 #include "source/drge_context.c"
 #include "source/drge_platform_layer.c"
+#include "source/drge_graphics.c"
 #include "source/drge_assets.c"
 
 // dr_libs
