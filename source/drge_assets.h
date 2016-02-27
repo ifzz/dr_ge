@@ -70,7 +70,8 @@ void drge_unload_asset(drge_asset* pAsset);
 // Increments the reference counter of the given asset.
 void drge_grab_asset(drge_asset* pAsset);
 
-// Decrements the reference counter of the given asset. This does not delete the asset.
+// Decrements the reference counter of the given asset. This does not delete the asset. Only use this when paired
+// with drge_grab_asset().
 unsigned int drge_release_asset(drge_asset* pAsset);
 
 
