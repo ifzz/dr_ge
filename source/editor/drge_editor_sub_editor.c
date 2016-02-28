@@ -8,9 +8,15 @@ typedef struct
     // The path of the file the sub-editor is linked to. Can be an empty string in which case it is assumed to be free-floating.
     char fileAbsolutePath[DRVFS_MAX_PATH];
 
+    // The size of the extra data.
+    size_t extraDataSize;
+
+    // A pointer to the extra data.
+    char pExtraData[1];
+
 } drge_subeditor_data;
 
-drge_subeditor* drge_editor_create_sub_editor(drge_editor* pEditor, const char* type, const char* fileAbsolutePath)
+drge_subeditor* drge_editor_create_sub_editor(drge_editor* pEditor, const char* type, const char* fileAbsolutePath, size_t extraDataSize)
 {
     if (pEditor == NULL || type == NULL) {
         return NULL;
@@ -27,7 +33,7 @@ drge_subeditor* drge_editor_create_sub_editor(drge_editor* pEditor, const char* 
 
 
     // A sub-editor is just a dr_appkit tool.
-    drgui_element* pAKTool = ak_create_tool(pEditor->pAKApp, NULL, type, sizeof(drge_subeditor_data), NULL);
+    drgui_element* pAKTool = ak_create_tool(pEditor->pAKApp, NULL, type, sizeof(drge_subeditor_data) - sizeof(char) + extraDataSize, NULL);
     if (pAKTool == NULL) {
         return NULL;
     }
@@ -78,6 +84,31 @@ const char* drge_subeditor_get_absolute_path(drge_subeditor* pSubEditor)
     }
 
     return pSEData->fileAbsolutePath;
+}
+
+
+size_t drge_subeditor_get_extra_data_size(drge_subeditor* pSubEditor)
+{
+    assert(ak_is_tool_of_type((drgui_element*)pSubEditor, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR));
+
+    drge_subeditor_data* pSEData = ak_get_tool_extra_data((drgui_element*)pSubEditor);
+    if (pSEData == NULL) {
+        return 0;
+    }
+
+    return pSEData->extraDataSize;
+}
+
+void* drge_subeditor_get_extra_data(drge_subeditor* pSubEditor)
+{
+    assert(ak_is_tool_of_type((drgui_element*)pSubEditor, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR));
+
+    drge_subeditor_data* pSEData = ak_get_tool_extra_data((drgui_element*)pSubEditor);
+    if (pSEData == NULL) {
+        return NULL;
+    }
+
+    return pSEData->pExtraData;
 }
 
 

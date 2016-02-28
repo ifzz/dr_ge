@@ -67,7 +67,7 @@ drge_asset* drge__load_image_asset_from_file(drge_context* pContext, drvfs_file*
 
     assert(pContext != NULL);
     assert(pFile != NULL);
-    assert(absolutePath != NULL);
+    assert(path != NULL);
 
     stbi_io_callbacks cb;
     cb.read = drge__stbi_read;

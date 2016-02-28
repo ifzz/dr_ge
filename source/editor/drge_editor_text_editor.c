@@ -9,7 +9,7 @@ typedef struct
 
 void drge_text_editor__on_handle_action(drgui_element* pTextEditor, const char* pActionName)
 {
-    drge_text_subeditor_data* pTEData = ak_get_tool_extra_data((drgui_element*)pTextEditor);
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
     assert(pTEData != NULL);
 
     if (strcmp(pActionName, "Edit.SelectAll") == 0) {
@@ -77,7 +77,7 @@ void drge_text_editor__on_handle_action(drgui_element* pTextEditor, const char* 
 drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char* fileAbsolutePath)
 {
     // A text editor is just a sub-editor.
-    drge_subeditor* pTextEditor = drge_editor_create_sub_editor(pEditor, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR, fileAbsolutePath);
+    drge_subeditor* pTextEditor = drge_editor_create_sub_editor(pEditor, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR, fileAbsolutePath, sizeof(drge_text_subeditor_data));
     if (pTextEditor == NULL) {
         return NULL;
     }
@@ -85,7 +85,7 @@ drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char*
     drgui_set_on_size((drgui_element*)pTextEditor, drgui_on_size_fit_children_to_parent);
     ak_tool_set_on_handle_action((drgui_element*)pTextEditor, drge_text_editor__on_handle_action);
 
-    drge_text_subeditor_data* pTEData = ak_get_tool_extra_data((drgui_element*)pTextEditor);
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
     pTEData->pTextBox = drgui_create_textbox(ak_get_application_gui(pEditor->pAKApp), (drgui_element*)pTextEditor, 0, NULL);
     drgui_textbox_set_vertical_align(pTEData->pTextBox, drgui_text_layout_alignment_top);
     

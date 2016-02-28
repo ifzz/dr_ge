@@ -6,7 +6,7 @@ typedef struct drgui_element drge_subeditor;
 // Creates a sub-editor tool. Sub-editors are usually tied to a file, but not always so filePath can be NULL. Note
 // that this is just an allocation function - you will likely want to call this from a higher level function such
 // as drge_editor_create_text_editor().
-drge_subeditor* drge_editor_create_sub_editor(drge_editor* pEditor, const char* type, const char* fileAbsolutePath);
+drge_subeditor* drge_editor_create_sub_editor(drge_editor* pEditor, const char* type, const char* fileAbsolutePath, size_t extraDataSize);
 
 // Deletes the given sub editor.
 void drge_editor_delete_sub_editor(drge_subeditor* pSubEditor);
@@ -16,6 +16,13 @@ drge_editor* drge_subeditor_get_editor(drge_subeditor* pSubEditor);
 
 // Retrieves the absolute path of the file the given sub-editor is linked to.
 const char* drge_subeditor_get_absolute_path(drge_subeditor* pSubEditor);
+
+// Retrieves the size of the extra data associated with the given sub-editor.
+size_t drge_subeditor_get_extra_data_size(drge_subeditor* pSubEditor);
+
+// Retrieves a pointer to the extra data associated with the given sub-editor.
+void* drge_subeditor_get_extra_data(drge_subeditor* pSubEditor);
+
 
 // Updates the title of the given sub-editor based on the name of the file it's linked to.
 //
