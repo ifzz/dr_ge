@@ -85,6 +85,25 @@ void drge_text_editor__on_handle_action(drgui_element* pTextEditor, const char* 
     }
 }
 
+static void drge_text_editor__on_key_down__textbox(drgui_element* pTextBox, drgui_key key, int stateFlags)
+{
+    drgui_element* pTextEditor = *(drgui_element**)ak_textbox_get_extra_data(pTextBox);
+    assert(pTextEditor != NULL);
+
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    switch (key)
+    {
+        case DRGUI_ESCAPE:
+        {
+            drge_editor_focus_command_bar(drge_subeditor_get_editor(pTextEditor));
+        } break;
+
+        default: drgui_textbox_on_key_down(pTEData->pTextBox, key, stateFlags);
+    }
+}
+
 drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char* fileAbsolutePath)
 {
     // A text editor is just a sub-editor.
@@ -98,7 +117,8 @@ drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char*
     ak_tool_set_on_handle_action((drgui_element*)pTextEditor, drge_text_editor__on_handle_action);
 
     drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
-    pTEData->pTextBox = ak_create_textbox(pEditor->pAKApp, (drgui_element*)pTextEditor, 0, NULL);
+    pTEData->pTextBox = ak_create_textbox(pEditor->pAKApp, (drgui_element*)pTextEditor, sizeof(&pTextEditor), &pTextEditor);
+    drgui_set_on_key_down(pTEData->pTextBox, drge_text_editor__on_key_down__textbox);
     drgui_textbox_set_vertical_align(pTEData->pTextBox, drgui_text_layout_alignment_top);
     
     
