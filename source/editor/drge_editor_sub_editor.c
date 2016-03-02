@@ -145,7 +145,7 @@ bool drge_subeditor_is_read_only(drge_subeditor* pSubEditor)
     }
 
     drvfs_file_info fi;
-    if (drvfs_get_file_info(drge_subeditor_get_editor(pSubEditor)->pContext->pVFS, absolutePath, &fi)) {
+    if (drvfs_get_file_info(drge_subeditor_get_editor(pSubEditor)->pContext->pVFS, absolutePath, &fi) == drvfs_success) {
         return (fi.attributes & DRVFS_FILE_ATTRIBUTE_READONLY) != 0;
     }
 

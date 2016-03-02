@@ -38,7 +38,7 @@ int drge__stbi_read(void* user, char *data, int size)
     assert(pFile != NULL);
 
     size_t bytesRead;
-    if (drvfs_read(pFile, data, (size_t)size, &bytesRead)) {
+    if (drvfs_read(pFile, data, (size_t)size, &bytesRead) == drvfs_success) {
         return (int)bytesRead;
     }
 
@@ -142,12 +142,12 @@ drge_asset* drge_load_asset(drge_context* pContext, const char* path)
     }
 
     drvfs_file_info fi;
-    if (!drvfs_get_file_info(pContext->pVFS, path, &fi)) {
+    if (drvfs_get_file_info(pContext->pVFS, path, &fi) != drvfs_success) {
         return NULL;    // File doesn't exist.
     }
 
-    drvfs_file* pFile = drvfs_open(pContext->pVFS, path, DRVFS_READ, 0);
-    if (pFile == NULL) {
+    drvfs_file* pFile;
+    if (drvfs_open(pContext->pVFS, path, DRVFS_READ, &pFile) != drvfs_success) {
         return NULL;
     }
 

@@ -70,8 +70,8 @@ static void drge_load_config(drge_context* pContext)
     // Load the default config first so we have default values for those that aren't specified in the config file.
     drge_load_default_config(pContext);
 
-    drvfs_file* pConfigFile = drvfs_open(drge_get_vfs(pContext), "config.cfg", DRVFS_READ, 0);
-    if (pConfigFile == NULL) {
+    drvfs_file* pConfigFile;
+    if (drvfs_open(drge_get_vfs(pContext), "config.cfg", DRVFS_READ, &pConfigFile) != drvfs_success) {
         return;
     }
 
@@ -97,7 +97,8 @@ static void drge_open_log_file(drge_context* pContext)
     drge_get_log_file_folder_path(pContext, logPath, sizeof(logPath));
     drpath_append(logPath, sizeof(logPath), "dr_log.log");
 
-    pContext->pLogFile = drvfs_open(drge_get_vfs(pContext), logPath, DRVFS_WRITE | DRVFS_TRUNCATE | DRVFS_CREATE_DIRS, 0);
+    pContext->pLogFile;
+    drvfs_open(drge_get_vfs(pContext), logPath, DRVFS_WRITE | DRVFS_TRUNCATE | DRVFS_CREATE_DIRS, &pContext->pLogFile);
 }
 
 static drge_context* drge_create_context_cmdline(dr_cmdline cmdline)

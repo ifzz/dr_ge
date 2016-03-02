@@ -109,3 +109,37 @@ void drge_editor_delete_text_editor(drge_subeditor* pTextEditor)
 {
     drge_editor_delete_sub_editor(pTextEditor);
 }
+
+
+void drge_editor_text_subeditor__capture_keyboard(drge_subeditor* pTextEditor)
+{
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    drgui_capture_keyboard(pTextEditor);
+}
+
+void drge_editor_text_subeditor__release_keyboard(drge_subeditor* pTextEditor)
+{
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    drgui_release_keyboard(pTextEditor->pContext);
+}
+
+
+void drge_editor_text_subeditor__show_line_numbers(drge_subeditor* pTextEditor)
+{
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    // TODO: Implement me.
+}
+
+void drge_editor_text_subeditor__hide_line_numbers(drge_subeditor* pTextEditor)
+{
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    // TODO: Implement me.
+}

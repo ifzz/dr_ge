@@ -128,6 +128,7 @@
 #include "source/editor/drge_editor_tool_types.h"
 #include "source/editor/drge_editor.h"
 #include "source/editor/drge_editor_main_menu.h"
+#include "source/editor/drge_editor_command_bar.h"
 #include "source/editor/drge_editor_sub_editor.h"
 #include "source/editor/drge_editor_text_editor.h"
 #include "source/editor/drge_editor_image_editor.h"
@@ -207,6 +208,7 @@
 #ifndef DR_GE_DISABLE_EDITOR
 #include "source/editor/drge_editor.c"
 #include "source/editor/drge_editor_main_menu.c"
+#include "source/editor/drge_editor_command_bar.c"
 #include "source/editor/drge_editor_sub_editor.c"
 #include "source/editor/drge_editor_text_editor.c"
 #include "source/editor/drge_editor_image_editor.c"

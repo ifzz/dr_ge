@@ -308,7 +308,7 @@ drge_window* drge_create_window(drge_context* pContext, const char* pTitle, unsi
     wa.colormap          = CopyFromParent;
     wa.border_pixel      = 0;
     wa.event_mask        = StructureNotifyMask | SubstructureNotifyMask | ExposureMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask | PointerMotionMask | ButtonMotionMask | FocusChangeMask | PropertyChangeMask;
-    wa.override_redirect = false;
+    wa.overrdrge_editor_redirect = false;
 
     Window x11Window = XCreateWindow(g_X11Display, RootWindow(g_X11Display, DefaultScreen(g_X11Display)), 0, 0, resolutionX, resolutionY, 0, CopyFromParent, InputOutput, CopyFromParent, CWBorderPixel | CWColormap | CWEventMask | CWOverrideRedirect, &wa);
     if (x11Window == 0) {

@@ -16,6 +16,19 @@ struct drge_editor
 
     // The focused tab group.
     drgui_element* pFocusedTabGroup;
+
+    // The command bar.
+    drgui_element* pCmdBar;
+
+
+    //// OPTIONS ////
+
+    // The scale to apply when scrolling text files with the mouse wheel. Can be negative, in which case the scroll
+    // direction will be reversed.
+    int mouseWheelScale;
+
+    // Whether or not the command bar should be dynamically toggled.
+    bool isCmdBarAlwaysShown;
 };
 
 // Creates the object representing the editor, but does not start running it.
@@ -49,3 +62,39 @@ bool drge_editor_try_focus_file_by_path(drge_editor* pEditor, const char* filePa
 
 // Retireves a pointer to the focused sub-editor.
 drge_subeditor* drge_editor_get_focused_subeditor(drge_editor* pEditor);
+
+
+
+// Shows the command bar.
+void drge_editor_show_command_bar(drge_editor* pEditor);
+
+// Hides the command bar.
+void drge_editor_hide_command_bar(drge_editor* pEditor);
+
+// Hides the command bar, but only if auto-hide is enabled. Returns true if the command bar was hidden, false otherwise.
+bool drge_editor_try_hide_command_bar(drge_editor* pEditor);
+
+// Determines whether or not the command bar is visible.
+bool drge_editor_is_showing_command_bar(drge_editor* pEditor);
+
+// Toggles the command bar.
+void drge_editor_toggle_command_bar(drge_editor* pEditor);
+
+// Places keyboard focus on the command bar and shows it.
+void drge_editor_focus_command_bar(drge_editor* pEditor);
+
+// Places keyboard focus on the command bar and sets the command text.
+void drge_editor_focus_command_bar_and_set_command(drge_editor* pEditor, const char* cmd);
+
+
+// Updates the command bar based on the context of a text editor.
+void drge_editor_update_command_bar__text_editor(drge_editor* pEditor, unsigned int lineNumber, unsigned int columnNumber);
+
+// Called from the command bar when it receives keyboard focus. This gives the application a chance to show the command bar.
+void drge_editor_on_command_bar_capture_keyboard(drge_editor* pEditor, drgui_element* pPrevCapturedElement);
+
+// Called from the command bar when it loses keyboard focus. This gives the application a chance to hide the command bar.
+void drge_editor_on_command_bar_release_keyboard(drge_editor* pEditor, drgui_element* pNewCapturedElement);
+
+// Retrieves a pointer to the command line tool.
+drgui_element* drge_editor_get_command_bar(drge_editor* pEditor);

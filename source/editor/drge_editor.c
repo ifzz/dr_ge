@@ -91,6 +91,26 @@ bool drge_editor__on_run(ak_application* pAKApp)
     ak_window_set_on_close(pEditor->pMainWindow, drge_editor__on_main_window_close);
 
 
+    // The config should have a container for the command bar - we'll want to create the command bar tool here.
+    drgui_element* pCommandBarContainer = ak_find_first_panel_by_type(pEditor->pAKApp, "CommandBarContainer");
+    if (pCommandBarContainer != NULL)
+    {
+        pEditor->pCmdBar = drge_editor_create_command_bar_tool(pEditor, NULL);
+        if (pEditor->pCmdBar != NULL)
+        {
+            ak_theme* pTheme = ak_get_application_theme(pEditor->pAKApp);
+            assert(pTheme != NULL);
+
+            drge_editor_command_bar_set_font(pEditor->pCmdBar, pTheme->pUIFont);
+            drge_editor_command_bar_set_text_color(pEditor->pCmdBar, pTheme->uiFontColor);
+            ak_panel_attach_tool(pCommandBarContainer, pEditor->pCmdBar);
+
+            drge_editor_command_bar_set_context_by_tool_type(pEditor->pCmdBar, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR);
+            drge_editor_show_command_bar(pEditor);
+        }
+    }
+
+
     // We need to open every file specified on the command line as "--editor <file>".
     drge_editor__open_files_on_cmdline(pEditor);
 
@@ -250,9 +270,6 @@ drgui_element* drge_editor__get_or_create_focused_tab_group(drge_editor* pEditor
     ak_panel_set_type(pEditor->pFocusedTabGroup, "DRGE.Editor.TabGroup");
     ak_panel_set_tab_options(pEditor->pFocusedTabGroup, AK_PANEL_OPTION_SHOW_TOOL_TABS | AK_PANEL_OPTION_SHOW_CLOSE_BUTTON_ON_TABS);
 
-    // TODO: Add a close button graphic to tabs.
-    //ak_panel_set_tab_close_button_image(pEditorGroup, ide_get_red_cross_image(ide_get_image_manager(pApplication)));
-
     return pEditor->pFocusedTabGroup;
 }
 
@@ -268,9 +285,12 @@ drge_editor* drge_create_editor(drge_context* pContext)
         return NULL;
     }
 
-    pEditor->pContext         = pContext;
-    pEditor->pMainWindow      = NULL;
-    pEditor->pFocusedTabGroup = NULL;
+    pEditor->pContext            = pContext;
+    pEditor->pMainWindow         = NULL;
+    pEditor->pFocusedTabGroup    = NULL;
+    pEditor->pCmdBar             = NULL;
+    pEditor->mouseWheelScale     = 3;
+    pEditor->isCmdBarAlwaysShown = true;
 
     // ak_application configuration.
     pEditor->pAKApp = ak_create_application(pContext->name, sizeof(&pEditor), &pEditor);
@@ -382,4 +402,119 @@ drge_subeditor* drge_editor_get_focused_subeditor(drge_editor* pEditor)
     }
 
     return NULL;
+}
+
+
+
+void drge_editor_show_command_bar(drge_editor* pEditor)
+{
+    if (drge_editor_is_showing_command_bar(pEditor)) {
+        return;
+    }
+
+    drgui_element* pMainContainer = ak_find_first_panel_by_type(pEditor->pAKApp, "MainContainer");
+    if (pMainContainer == NULL) {
+        return;
+    }
+
+    ak_panel_split(pMainContainer, ak_panel_split_axis_horizontal_bottom, 22);
+}
+
+void drge_editor_hide_command_bar(drge_editor* pEditor)
+{
+    if (!drge_editor_is_showing_command_bar(pEditor)) {
+        return;
+    }
+
+    drgui_element* pMainContainer = ak_find_first_panel_by_type(pEditor->pAKApp, "MainContainer");
+    if (pMainContainer == NULL) {
+        return;
+    }
+
+    ak_panel_split(pMainContainer, ak_panel_split_axis_horizontal_bottom, 0);
+
+    // Make sure the command bar does not have keyboard focus.
+    drge_editor_command_bar_release_keyboard(drge_editor_get_command_bar(pEditor));
+}
+
+bool drge_editor_try_hide_command_bar(drge_editor* pEditor)
+{
+    if (!drge_editor_is_showing_command_bar(pEditor)) {
+        return true;
+    }
+
+    if (!pEditor->isCmdBarAlwaysShown) {
+        drge_editor_hide_command_bar(pEditor);
+        return true;
+    }
+
+    return false;
+}
+
+bool drge_editor_is_showing_command_bar(drge_editor* pEditor)
+{
+    if (pEditor == NULL) {
+        return false;
+    }
+
+    drgui_element* pMainContainer = ak_find_first_panel_by_type(pEditor->pAKApp, "MainContainer");
+    if (pMainContainer == NULL) {
+        return false;
+    }
+
+    return ak_panel_get_split_pos(pMainContainer) > 0;
+}
+
+void drge_editor_toggle_command_bar(drge_editor* pEditor)
+{
+    if (drge_editor_is_showing_command_bar(pEditor)) {
+        drge_editor_hide_command_bar(pEditor);
+    } else {
+        drge_editor_show_command_bar(pEditor);
+    }
+}
+
+void drge_editor_focus_command_bar(drge_editor* pEditor)
+{
+    // We just capture the keyboard which will result in an on_capture_keyboard event which is where the command bar will be displayed.
+    drge_editor_command_bar_capture_keyboard(drge_editor_get_command_bar(pEditor));
+}
+
+void drge_editor_focus_command_bar_and_set_command(drge_editor* pEditor, const char* cmd)
+{
+    drge_editor_focus_command_bar(pEditor);
+    drge_editor_command_bar_set_command_text(drge_editor_get_command_bar(pEditor), cmd);
+}
+
+
+void drge_editor_update_command_bar__text_editor(drge_editor* pEditor, unsigned int lineNumber, unsigned int columnNumber)
+{
+    drge_editor_command_bar_set_text_editor_line_number(pEditor->pCmdBar, lineNumber);
+    drge_editor_command_bar_set_text_editor_column_number(pEditor->pCmdBar, columnNumber);
+}
+
+void drge_editor_on_command_bar_capture_keyboard(drge_editor* pEditor, drgui_element* pPrevCapturedElement)
+{
+    (void)pPrevCapturedElement;
+
+    // We want to always ensure the command bar is visible when it receives focus.
+    drge_editor_show_command_bar(pEditor);
+}
+
+void drge_editor_on_command_bar_release_keyboard(drge_editor* pEditor, drgui_element* pNewCapturedElement)
+{
+    // We'll want to hide the command bar if we have toggling enabled.
+    if (!pEditor->isCmdBarAlwaysShown) {
+        drge_editor_hide_command_bar(pEditor);
+    }
+
+    drgui_element* pFocusedTool = drge_editor_get_focused_subeditor(pEditor);
+    if (pNewCapturedElement == NULL && ak_is_tool_of_type(pFocusedTool, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR)) {
+        drge_editor_text_subeditor__capture_keyboard(pFocusedTool);
+    }
+}
+
+drgui_element* drge_editor_get_command_bar(drge_editor* pEditor)
+{
+    return pEditor->pCmdBar;
 }
