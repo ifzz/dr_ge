@@ -98,16 +98,12 @@ drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char*
     ak_tool_set_on_handle_action((drgui_element*)pTextEditor, drge_text_editor__on_handle_action);
 
     drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
-    pTEData->pTextBox = drgui_create_textbox(ak_get_application_gui(pEditor->pAKApp), (drgui_element*)pTextEditor, 0, NULL);
+    pTEData->pTextBox = ak_create_textbox(pEditor->pAKApp, (drgui_element*)pTextEditor, 0, NULL);
     drgui_textbox_set_vertical_align(pTEData->pTextBox, drgui_text_layout_alignment_top);
     
     
     ak_theme* pTheme = ak_get_application_theme(pEditor->pAKApp);
-    drgui_textbox_set_text_color(pTEData->pTextBox, pTheme->defaultText.textColor);
-    drgui_textbox_set_background_color(pTEData->pTextBox, pTheme->defaultText.backgroundColor);
     drgui_textbox_set_active_line_background_color(pTEData->pTextBox, drgui_rgb(40, 40, 40));
-    drgui_textbox_set_cursor_color(pTEData->pTextBox, pTheme->defaultText.textColor);
-    drgui_textbox_set_font(pTEData->pTextBox, pTheme->defaultText.pFont);
     drgui_textbox_set_border_width(pTEData->pTextBox, 0);
 
     char* fileData = drvfs_open_and_read_text_file(pEditor->pContext->pVFS, fileAbsolutePath, NULL);

@@ -21,9 +21,6 @@ typedef struct
     /// The command text box.
     drgui_element* pCmdTB;
 
-    /// The timer to use for stepping the text box.
-    ak_timer* pCmdTBTimer;
-
 
     /// The container for when an unknown tool type is active.
     drgui_element* pNullInfo;
@@ -72,9 +69,6 @@ static void drge_editor_command_bar__on_cmdtb_capture_keyboard(drgui_element* pC
 // on_cmdtb_release_mouse
 static void drge_editor_command_bar__on_cmdtb_release_keyboard(drgui_element* pCmdTB, drgui_element* pNewCapturedElement);
 
-// The command text box cursor blink timer callback.
-static void drge_editor_command_bar__on_cmdtb_timer(ak_timer* pTimer, void* pUserData);
-
 
 // A helper function for creating a container for a specific tool type.
 static drgui_element* drge_editor_command_bar__create_info_container(drgui_element* pCmdBarTool, drgui_on_paint_proc onPaint);
@@ -108,23 +102,19 @@ drgui_element* drge_editor_create_command_bar_tool(drge_editor* pEditor, drgui_e
     assert(pCmdBar != NULL);
 
     pCmdBar->pEditor = pEditor;
-    pCmdBar->pCmdTB = drgui_create_textbox(ak_get_application_gui(pEditor->pAKApp), pCmdBarTool, sizeof(&pCmdBarTool), &pCmdBarTool);
+    pCmdBar->pCmdTB = ak_create_textbox(pEditor->pAKApp, pCmdBarTool, sizeof(&pCmdBarTool), &pCmdBarTool);
     drgui_set_on_capture_keyboard(pCmdBar->pCmdTB, drge_editor_command_bar__on_cmdtb_capture_keyboard);
     drgui_set_on_release_keyboard(pCmdBar->pCmdTB, drge_editor_command_bar__on_cmdtb_release_keyboard);
     drgui_set_on_key_down(pCmdBar->pCmdTB, drge_editor_command_bar__on_cmdtb_key_down);
     drgui_set_on_printable_key_down(pCmdBar->pCmdTB, drge_editor_command_bar__on_cmdtb_printable_key_down);
 
     drgui_textbox_set_vertical_align(pCmdBar->pCmdTB, drgui_text_layout_alignment_center);
-    drgui_textbox_set_font(pCmdBar->pCmdTB, pTheme->defaultText.pFont);
-    drgui_textbox_set_text_color(pCmdBar->pCmdTB, pTheme->uiFontColor);
-    drgui_textbox_set_cursor_color(pCmdBar->pCmdTB, pTheme->uiFontColor);
     drgui_textbox_set_border_width(pCmdBar->pCmdTB, 0);
     drgui_textbox_set_padding(pCmdBar->pCmdTB, 2);
     drgui_textbox_set_background_color(pCmdBar->pCmdTB, drgui_rgb(64, 64, 64));
     drgui_textbox_set_active_line_background_color(pCmdBar->pCmdTB, drgui_rgb(64, 64, 64));
 
-    pCmdBar->pCmdTBTimer = NULL;
-    pCmdBar->pNullInfo = drge_editor_command_bar__create_info_container__null(pCmdBarTool);
+    pCmdBar->pNullInfo       = drge_editor_command_bar__create_info_container__null(pCmdBarTool);
     pCmdBar->pTextEditorInfo = drge_editor_command_bar__create_info_container__text_editor(pCmdBarTool);
     pCmdBar->textEditorInfo.lineNumber = 0;
     pCmdBar->textEditorInfo.columnNumber = 0;
@@ -292,7 +282,7 @@ static void drge_editor_command_bar__on_paint(drgui_element* pCmdBarTool, drgui_
 
 static void drge_editor_command_bar__on_cmdtb_key_down(drgui_element* pCmdTB, drgui_key key, int stateFlags)
 {
-    drgui_element* pCmdBarTool = *(drgui_element**)drgui_textbox_get_extra_data(pCmdTB);
+    drgui_element* pCmdBarTool = *(drgui_element**)ak_textbox_get_extra_data(pCmdTB);
     assert(pCmdBarTool != NULL);
 
     switch (key)
@@ -313,7 +303,7 @@ static void drge_editor_command_bar__on_cmdtb_printable_key_down(drgui_element* 
 {
     // We want to intercept the enter key and prevent it from being sent to the normal event handler.
     if (utf32 == '\n' || utf32 == '\r') {
-        drgui_element* pCmdBarTool = *(drgui_element**)drgui_textbox_get_extra_data(pCmdTB);
+        drgui_element* pCmdBarTool = *(drgui_element**)ak_textbox_get_extra_data(pCmdTB);
         assert(pCmdBarTool != NULL);
 
         drge_editor_command_bar* pCmdBar = ak_get_tool_extra_data(pCmdBarTool);
@@ -343,50 +333,26 @@ static void drge_editor_command_bar__on_cmdtb_printable_key_down(drgui_element* 
 
 static void drge_editor_command_bar__on_cmdtb_capture_keyboard(drgui_element* pCmdTB, drgui_element* pPrevCapturedElement)
 {
-    drgui_element* pCmdBarTool = *(drgui_element**)drgui_textbox_get_extra_data(pCmdTB);
+    drgui_element* pCmdBarTool = *(drgui_element**)ak_textbox_get_extra_data(pCmdTB);
     assert(pCmdBarTool != NULL);
 
     drge_editor_command_bar* pCmdBar = ak_get_tool_extra_data(pCmdBarTool);
     assert(pCmdBar != NULL);
 
-    // If we don't have a timer we'll to create one.
-    if (pCmdBar->pCmdTBTimer == NULL) {
-        pCmdBar->pCmdTBTimer = ak_create_timer(ak_get_tool_application(pCmdBarTool), 100, drge_editor_command_bar__on_cmdtb_timer, pCmdBarTool);
-    }
-
-    drgui_textbox_on_capture_keyboard(pCmdBar->pCmdTB, pPrevCapturedElement);
+    ak_textbox_on_capture_keyboard(pCmdBar->pCmdTB, pPrevCapturedElement);
     drge_editor_on_command_bar_capture_keyboard(pCmdBar->pEditor, pPrevCapturedElement);
 }
 
 static void drge_editor_command_bar__on_cmdtb_release_keyboard(drgui_element* pCmdTB, drgui_element* pNewCapturedElement)
 {
-    drgui_element* pCmdBarTool = *(drgui_element**)drgui_textbox_get_extra_data(pCmdTB);
+    drgui_element* pCmdBarTool = *(drgui_element**)ak_textbox_get_extra_data(pCmdTB);
     assert(pCmdBarTool != NULL);
 
     drge_editor_command_bar* pCmdBar = ak_get_tool_extra_data(pCmdBarTool);
     assert(pCmdBar != NULL);
 
-    // If we have a timer we'll want to delete it.
-    if (pCmdBar->pCmdTBTimer != NULL) {
-        ak_delete_timer(pCmdBar->pCmdTBTimer);
-        pCmdBar->pCmdTBTimer = NULL;
-    }
-
-    drgui_textbox_on_release_keyboard(pCmdBar->pCmdTB, pNewCapturedElement);
+    ak_textbox_on_release_keyboard(pCmdBar->pCmdTB, pNewCapturedElement);
     drge_editor_on_command_bar_release_keyboard(pCmdBar->pEditor, pNewCapturedElement);
-}
-
-static void drge_editor_command_bar__on_cmdtb_timer(ak_timer* pTimer, void* pUserData)
-{
-    (void)pTimer;
-
-    drgui_element* pCmdBarTool = pUserData;
-    assert(pCmdBarTool != NULL);
-
-    drge_editor_command_bar* pCmdBar = ak_get_tool_extra_data(pCmdBarTool);
-    assert(pCmdBar != NULL);
-
-    drgui_textbox_step(pCmdBar->pCmdTB, 100);
 }
 
 

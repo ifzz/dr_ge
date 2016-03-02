@@ -135,7 +135,7 @@ void drge_editor__on_key_down(ak_application* pAKApp, ak_window* pWindow, drgui_
 
         return;
     }
-
+    
     if (shortcutKey == 'A' && (stateFlags & AK_KEY_STATE_CTRL_DOWN) != 0) {
         ak_handle_action(pAKApp, "Edit.SelectAll");
     }
