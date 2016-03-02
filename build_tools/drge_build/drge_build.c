@@ -86,7 +86,7 @@ void copy_and_log_file(drge_build_context* pContext, const char* srcPath, const 
     drpath_copy_base_path(dstPath, dstPathDir, sizeof(dstPathDir));
     drvfs_create_directory(pContext->pVFS, dstPathDir);
 
-    if (drvfs_copy_file(pContext->pVFS, srcPath, dstPath, false)) {
+    if (drvfs_copy_file(pContext->pVFS, srcPath, dstPath, false) == drvfs_success) {
         printf("  Copied file %s to %s\n", srcPath, dstPath);
     } else {
         printf("  ERROR: Failed to copy %s to %s\n", srcPath, dstPath);
