@@ -25,6 +25,10 @@ typedef struct
     ak_timer* pCmdTBTimer;
 
 
+    /// The container for when an unknown tool type is active.
+    drgui_element* pNullInfo;
+
+
     /// The container for text editor info.
     drgui_element* pTextEditorInfo;
 
@@ -47,32 +51,40 @@ typedef struct
 
 } drge_editor_command_bar;
 
-/// A helper function for creating the info container for "Editor.Text" tools.
-static drgui_element* drge_editor_command_bar__create_info_container__text_editor(drgui_element* pCmdBarTool);
-
-/// A helper function for retrieving the info container for the given tool type.
+// A helper function for retrieving the info container for the given tool type.
 static drgui_element* drge_editor_command_bar__get_info_container_by_tool_type(drgui_element* pCmdBarTool, const char* pToolType);
 
-/// on_size()
+// on_size()
 static void drge_editor_command_bar__on_size(drgui_element* pCmdBarTool, float newWidth, float newHeight);
 
-/// on_paint()
+// on_paint()
 static void drge_editor_command_bar__on_paint(drgui_element* pCmdBarTool, drgui_rect relativeRect, void* pPaintData);
 
-/// on_cmdtb_key_down
+// on_cmdtb_key_down
 static void drge_editor_command_bar__on_cmdtb_key_down(drgui_element* pCmdTB, drgui_key key, int stateFlags);
 
-/// on_cmdtb_printable_key_down
+// on_cmdtb_printable_key_down
 static void drge_editor_command_bar__on_cmdtb_printable_key_down(drgui_element* pCmdTB, unsigned int utf32, int stateFlags);
 
-/// on_cmdtb_capture_mouse
+// on_cmdtb_capture_mouse
 static void drge_editor_command_bar__on_cmdtb_capture_keyboard(drgui_element* pCmdTB, drgui_element* pPrevCapturedElement);
 
-/// on_cmdtb_release_mouse
+// on_cmdtb_release_mouse
 static void drge_editor_command_bar__on_cmdtb_release_keyboard(drgui_element* pCmdTB, drgui_element* pNewCapturedElement);
 
-/// The command text box cursor blink timer callback.
+// The command text box cursor blink timer callback.
 static void drge_editor_command_bar__on_cmdtb_timer(ak_timer* pTimer, void* pUserData);
+
+
+// A helper function for creating a container for a specific tool type.
+static drgui_element* drge_editor_command_bar__create_info_container(drgui_element* pCmdBarTool, drgui_on_paint_proc onPaint);
+
+// A helper function for creating the info container for unkown or unsupported tools.
+static drgui_element* drge_editor_command_bar__create_info_container__null(drgui_element* pCmdBarTool);
+
+// A helper function for creating the info container for DRGE_EDITOR_TOOL_TYPE_COMMAND_BAR tools.
+static drgui_element* drge_editor_command_bar__create_info_container__text_editor(drgui_element* pCmdBarTool);
+
 
 drgui_element* drge_editor_create_command_bar_tool(drge_editor* pEditor, drgui_element* pParent)
 {
@@ -112,6 +124,7 @@ drgui_element* drge_editor_create_command_bar_tool(drge_editor* pEditor, drgui_e
     drgui_textbox_set_active_line_background_color(pCmdBar->pCmdTB, drgui_rgb(64, 64, 64));
 
     pCmdBar->pCmdTBTimer = NULL;
+    pCmdBar->pNullInfo = drge_editor_command_bar__create_info_container__null(pCmdBarTool);
     pCmdBar->pTextEditorInfo = drge_editor_command_bar__create_info_container__text_editor(pCmdBarTool);
     pCmdBar->textEditorInfo.lineNumber = 0;
     pCmdBar->textEditorInfo.columnNumber = 0;
@@ -243,9 +256,9 @@ static drgui_element* drge_editor_command_bar__get_info_container_by_tool_type(d
 
     if (ak_is_of_tool_type(pToolType, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR)) {
         return pCmdBar->pTextEditorInfo;
+    } else {
+        return pCmdBar->pNullInfo;
     }
-
-    return NULL;
 }
 
 static void drge_editor_command_bar__on_size(drgui_element* pCmdBarTool, float newWidth, float newHeight)
@@ -274,7 +287,6 @@ static void drge_editor_command_bar__on_paint(drgui_element* pCmdBarTool, drgui_
     if (pCmdBar == NULL) {
         return;
     }
-
 }
 
 
@@ -379,13 +391,24 @@ static void drge_editor_command_bar__on_cmdtb_timer(ak_timer* pTimer, void* pUse
 
 
 
+//// NULL Context ////
+
+static void drge_editor_command_bar__on_paint__null(drgui_element* pContainerElement, drgui_rect relativeRect, void* pPaintData)
+{
+    drgui_element* pCmdBarTool = *(drgui_element**)drgui_get_extra_data(pContainerElement);
+    assert(pCmdBarTool != NULL);
+
+    drge_editor_command_bar* pCmdBar = ak_get_tool_extra_data(pCmdBarTool);
+    if (pCmdBar == NULL) {
+        return;
+    }
+
+    drgui_draw_rect(pContainerElement, drgui_get_local_rect(pContainerElement), pCmdBar->bgColor, pPaintData);
+}
 
 
 
-//// Editor.Text
-
-// on_paint (Editor.Text)
-static void drge_editor_command_bar__on_paint__text_editor(drgui_element* pCmdBarTool, drgui_rect relativeRect, void* pPaintData);
+//// Text Editor Context ////
 
 void drge_editor_command_bar_set_text_editor_line_number(drgui_element* pCmdBarTool, unsigned int lineNumber)
 {
@@ -428,7 +451,6 @@ void drge_editor_command_bar_set_text_editor_character_number(drgui_element* pCm
         drgui_dirty(pCmdBar->pCurrentInfoContainer, drgui_get_local_rect(pCmdBar->pCurrentInfoContainer));
     }
 }
-
 
 static void drge_editor_command_bar__on_paint__text_editor(drgui_element* pContainerElement, drgui_rect relativeRect, void* pPaintData)
 {
@@ -486,10 +508,13 @@ static void drge_editor_command_bar__on_paint__text_editor(drgui_element* pConta
     drgui_draw_rect(pContainerElement, drgui_make_rect(offsetX + colWidth, 0, offsetX + segmentWidth, containerHeight), pCmdBar->bgColor, pPaintData);
     drgui_draw_rect(pContainerElement, drgui_make_rect(offsetX, 0, offsetX + colWidth, offsetY), pCmdBar->bgColor, pPaintData);
     drgui_draw_rect(pContainerElement, drgui_make_rect(offsetX, offsetY + fontMetrics.lineHeight, offsetX + colWidth, containerHeight), pCmdBar->bgColor, pPaintData);
-
 }
 
-static drgui_element* drge_editor_command_bar__create_info_container__text_editor(drgui_element* pCmdBarTool)
+
+
+
+
+static drgui_element* drge_editor_command_bar__create_info_container(drgui_element* pCmdBarTool, drgui_on_paint_proc onPaint)
 {
     drge_editor_command_bar* pCmdBar = ak_get_tool_extra_data(pCmdBarTool);
     if (pCmdBar == NULL) {
@@ -501,7 +526,17 @@ static drgui_element* drge_editor_command_bar__create_info_container__text_edito
         return NULL;
     }
 
-    drgui_set_on_paint(pInfoContainer, drge_editor_command_bar__on_paint__text_editor);
+    drgui_set_on_paint(pInfoContainer, onPaint);
 
     return pInfoContainer;
+}
+
+static drgui_element* drge_editor_command_bar__create_info_container__null(drgui_element* pCmdBarTool)
+{
+    return drge_editor_command_bar__create_info_container(pCmdBarTool, drge_editor_command_bar__on_paint__null);
+}
+
+static drgui_element* drge_editor_command_bar__create_info_container__text_editor(drgui_element* pCmdBarTool)
+{
+    return drge_editor_command_bar__create_info_container(pCmdBarTool, drge_editor_command_bar__on_paint__text_editor);
 }

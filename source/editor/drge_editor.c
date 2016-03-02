@@ -158,6 +158,30 @@ void drge_editor__on_key_down(ak_application* pAKApp, ak_window* pWindow, drgui_
     }
 }
 
+void drge_editor__on_tool_activated(ak_application* pAKApp, drgui_element* pTool)
+{
+    drge_editor* pEditor = *(drge_editor**)ak_get_application_extra_data(pAKApp);
+    assert(pEditor != NULL);
+
+    // If it was a sub-editor that became focused we'll need to update the main menu and command bar.
+    if (ak_is_tool_of_type(pTool, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR)) {
+        drgui_capture_keyboard(pTool);
+        drge_editor_command_bar_set_context_by_tool_type(pEditor->pCmdBar, ak_get_tool_type(pTool));
+    }
+}
+
+void drge_editor__on_tool_deactivated(ak_application* pAKApp, drgui_element* pTool)
+{
+    drge_editor* pEditor = *(drge_editor**)ak_get_application_extra_data(pAKApp);
+    assert(pEditor != NULL);
+
+    if (ak_is_tool_of_type(pTool, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR)) {
+        if (drgui_is_descendant(drgui_get_element_with_keyboard_capture(ak_get_application_gui(pAKApp)), pTool)) {
+            drgui_release_keyboard(ak_get_application_gui(pAKApp));
+        }
+    }
+}
+
 void drge_editor__on_handle_action(ak_application* pAKApp, const char* pActionName)
 {
     drge_editor* pEditor = *(drge_editor**)ak_get_application_extra_data(pAKApp);
@@ -303,6 +327,8 @@ drge_editor* drge_create_editor(drge_context* pContext)
     ak_set_on_default_config(pEditor->pAKApp, drge_editor__on_get_default_config);
     ak_set_on_run(pEditor->pAKApp, drge_editor__on_run);
     ak_set_on_key_down(pEditor->pAKApp, drge_editor__on_key_down);
+    ak_set_on_tool_activated(pEditor->pAKApp, drge_editor__on_tool_activated);
+    ak_set_on_tool_deactivated(pEditor->pAKApp, drge_editor__on_tool_deactivated);
     ak_set_on_handle_action(pEditor->pAKApp, drge_editor__on_handle_action);
     ak_set_on_exec(pEditor->pAKApp, drge_editor__on_exec);
 

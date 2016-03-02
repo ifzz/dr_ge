@@ -7,6 +7,17 @@ typedef struct
 
 } drge_text_subeditor_data;
 
+void drge_text_editor__on_capture_keyboard(drgui_element* pTextEditor, drgui_element* pPrevCapturedElement)
+{
+    // When the main tool receives keyboard focus we actually want to divert it to the text box.
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    if (pPrevCapturedElement != pTEData->pTextBox) {
+        drgui_capture_keyboard(pTEData->pTextBox);
+    }
+}
+
 void drge_text_editor__on_handle_action(drgui_element* pTextEditor, const char* pActionName)
 {
     drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
@@ -83,6 +94,7 @@ drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char*
     }
 
     drgui_set_on_size((drgui_element*)pTextEditor, drgui_on_size_fit_children_to_parent);
+    drgui_set_on_capture_keyboard((drgui_element*)pTextEditor, drge_text_editor__on_capture_keyboard);
     ak_tool_set_on_handle_action((drgui_element*)pTextEditor, drge_text_editor__on_handle_action);
 
     drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
@@ -116,7 +128,7 @@ void drge_editor_text_subeditor__capture_keyboard(drge_subeditor* pTextEditor)
     drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
     assert(pTEData != NULL);
 
-    drgui_capture_keyboard(pTextEditor);
+    drgui_capture_keyboard(pTEData->pTextBox);
 }
 
 void drge_editor_text_subeditor__release_keyboard(drge_subeditor* pTextEditor)
