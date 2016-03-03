@@ -173,8 +173,15 @@ static drgui_element* drge_editor__on_create_tool(ak_application* pApplication, 
     drge_editor* pEditor = *(drge_editor**)ak_get_application_extra_data(pApplication);
     assert(pEditor != NULL);
 
-    if (strcmp(type, DRGE_EDITOR_TOOL_TYPE_MAIN_MENU) == 0) {
-        return NULL;
+    if (strcmp(type, DRGE_EDITOR_TOOL_TYPE_MAIN_MENU) == 0)
+    {
+        if (pEditor->pMainMenu == NULL) {
+            pEditor->pMainMenu = drge_editor_create_main_menu_tool(pEditor, NULL, pWindow);
+        } else {
+            drge_warning(pEditor->pContext, "Attempting to create more than one main menu.");
+        }
+
+        return pEditor->pMainMenu;
     }
 
     return NULL;
@@ -193,29 +200,14 @@ static bool drge_editor__on_delete_tool(ak_application* pApplication, drgui_elem
 
     if (ak_is_tool_of_type(pTool, DRGE_EDITOR_TOOL_TYPE_MAIN_MENU))
     {
+        drge_editor_delete_main_menu_tool(pEditor->pMainMenu);
+        pEditor->pMainMenu = NULL;
         return true;
     }
 
     if (ak_is_tool_of_type(pTool, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR))
     {
         // TODO: Check for modifications and show a dialog, but only if <force> is false..
-#if 0
-        virtual_file* pFile = ide_get_file_linked_to_tool(pTool);
-        if (pFile != NULL)
-        {
-            ide_unlink_tool_from_file(pTool);
-            file_manager_close_file(pFile);
-        }
-
-        ak_panel_detach_tool(ak_get_tool_panel(pTool), pTool);
-        ide_delete_tool(pTool);
-
-        drgui_element* pFocusedTool = ide_get_focused_tool(pApplication);
-        if (pFocusedTool == NULL) {
-            ide_change_main_menu_by_tool_type(pIDE->pMainMenu, NULL, false);
-        }
-#endif
-
         drge_editor__delete_subeditor(pEditor, pTool);
         return true;
     }
@@ -519,6 +511,7 @@ drge_editor* drge_create_editor(drge_context* pContext)
     pEditor->pContext            = pContext;
     pEditor->pMainWindow         = NULL;
     pEditor->pFocusedTabGroup    = NULL;
+    pEditor->pMainMenu           = NULL;
     pEditor->pCmdBar             = NULL;
     pEditor->mouseWheelScale     = 3;
     pEditor->isCmdBarAlwaysShown = true;

@@ -17,6 +17,9 @@ struct drge_editor
     // The focused tab group.
     drgui_element* pFocusedTabGroup;
 
+    // The main menu.
+    drgui_element* pMainMenu;
+
     // The command bar.
     drgui_element* pCmdBar;
 
