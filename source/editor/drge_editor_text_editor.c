@@ -212,7 +212,7 @@ void drge_editor_text_subeditor__show_line_numbers(drge_subeditor* pTextEditor)
     drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
     assert(pTEData != NULL);
 
-    // TODO: Implement me.
+    drgui_textbox_show_line_numbers(pTEData->pTextBox);
 }
 
 void drge_editor_text_subeditor__hide_line_numbers(drge_subeditor* pTextEditor)
@@ -220,7 +220,7 @@ void drge_editor_text_subeditor__hide_line_numbers(drge_subeditor* pTextEditor)
     drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
     assert(pTEData != NULL);
 
-    // TODO: Implement me.
+    drgui_textbox_hide_line_numbers(pTEData->pTextBox);
 }
 
 
