@@ -5,6 +5,9 @@ typedef struct
     // The text editor element where the actual text editing is done.
     drgui_element* pTextBox;
 
+    // The undo point at the time of the last save, or 0 by default.
+    unsigned int iUndoPointAtLastSave;
+
 } drge_text_subeditor_data;
 
 static void drge_text_editor__on_capture_keyboard(drgui_element* pTextEditor, drgui_element* pPrevCapturedElement)
@@ -85,6 +88,26 @@ static void drge_text_editor__on_handle_action(drgui_element* pTextEditor, const
     }
 }
 
+static bool drge_text_editor__save(drge_subeditor* pTextEditor, const char* absolutePathToSaveAs)
+{
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+
+    size_t textSize = drgui_textbox_get_text(pTEData->pTextBox, NULL, 0);
+
+    char* pText = malloc(textSize + 1); // +1 for null terminator.
+    drgui_textbox_get_text(pTEData->pTextBox, pText, textSize + 1);
+
+    bool wasSuccessful = drvfs_open_and_write_text_file(drge_subeditor_get_editor(pTextEditor)->pContext->pVFS, absolutePathToSaveAs, pText);
+    if (wasSuccessful) {
+        pTEData->iUndoPointAtLastSave = drgui_textbox_get_undo_points_remaining_count(pTEData->pTextBox);
+    }
+
+    free(pText);
+    return wasSuccessful;
+}
+
 
 static void drge_text_editor__on_key_down__textbox(drgui_element* pTextBox, drgui_key key, int stateFlags)
 {
@@ -114,6 +137,19 @@ static void drge_text_editor__on_cursor_move__textbox(drgui_element* pTextBox)
     drge_editor_update_status_bar(drge_subeditor_get_editor(pTextEditor));
 }
 
+static void drge_text_editor__on_undo_point_changed__textbox(drgui_element* pTextBox, unsigned int iUndoPoint)
+{
+    // This is where we change the title to show whether or not the file is modified.
+    drgui_element* pTextEditor = *(drgui_element**)ak_textbox_get_extra_data(pTextBox);
+    assert(pTextEditor != NULL);
+
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    bool isModified = pTEData->iUndoPointAtLastSave != iUndoPoint;
+    drge_subeditor_update_title(pTextEditor, isModified);
+}
+
 drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char* fileAbsolutePath)
 {
     // A text editor is just a sub-editor.
@@ -125,14 +161,18 @@ drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char*
     drgui_set_on_size((drgui_element*)pTextEditor, drgui_on_size_fit_children_to_parent);
     drgui_set_on_capture_keyboard((drgui_element*)pTextEditor, drge_text_editor__on_capture_keyboard);
     ak_tool_set_on_handle_action((drgui_element*)pTextEditor, drge_text_editor__on_handle_action);
+    drge_subeditor_set_save_proc(pTextEditor, drge_text_editor__save);
 
     drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
     pTEData->pTextBox = ak_create_textbox(pEditor->pAKApp, (drgui_element*)pTextEditor, sizeof(&pTextEditor), &pTextEditor);
     drgui_set_on_key_down(pTEData->pTextBox, drge_text_editor__on_key_down__textbox);
     drgui_textbox_set_on_cursor_move(pTEData->pTextBox, drge_text_editor__on_cursor_move__textbox);
+    drgui_textbox_set_on_undo_point_changed(pTEData->pTextBox, drge_text_editor__on_undo_point_changed__textbox);
     drgui_textbox_set_vertical_align(pTEData->pTextBox, drgui_text_layout_alignment_top);
     
-    
+    pTEData->iUndoPointAtLastSave = 0;
+
+
     ak_theme* pTheme = ak_get_application_theme(pEditor->pAKApp);
     drgui_textbox_set_active_line_background_color(pTEData->pTextBox, drgui_rgb(40, 40, 40));
     drgui_textbox_set_border_width(pTEData->pTextBox, 0);

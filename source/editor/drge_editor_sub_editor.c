@@ -8,6 +8,11 @@ typedef struct
     // The path of the file the sub-editor is linked to. Can be an empty string in which case it is assumed to be free-floating.
     char fileAbsolutePath[DRVFS_MAX_PATH];
 
+
+    // The function to call when the sub-editor needs to be saved.
+    drge_subeditor_save_proc saveProc;
+
+
     // The size of the extra data.
     size_t extraDataSize;
 
@@ -45,7 +50,8 @@ drge_subeditor* drge_editor_create_sub_editor(drge_editor* pEditor, const char* 
         return NULL;
     }
 
-    pSEData->pEditor = pEditor;
+    pSEData->pEditor  = pEditor;
+    pSEData->saveProc = NULL;
 
     // The text of the sub-editor's tab is based on the title of the tool so we'll need to update that. The last argument is
     // whether or not to mark the title as modified by placing an asterix at the end.
@@ -109,6 +115,44 @@ void* drge_subeditor_get_extra_data(drge_subeditor* pSubEditor)
     }
 
     return pSEData->pExtraData;
+}
+
+
+bool drge_subeditor_save_to_file(drge_subeditor* pSubEditor, const char* absolutePathToSaveAs)
+{
+    assert(ak_is_tool_of_type((drgui_element*)pSubEditor, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR));
+    assert(absolutePathToSaveAs != NULL);
+
+    drge_subeditor_data* pSEData = ak_get_tool_extra_data((drgui_element*)pSubEditor);
+    if (pSEData == NULL) {
+        return false;
+    }
+
+    if (pSEData->saveProc) {
+        if (!pSEData->saveProc(pSubEditor, absolutePathToSaveAs)) {
+            return false;
+        }
+
+        strcpy_s(pSEData->fileAbsolutePath, sizeof(pSEData->fileAbsolutePath), absolutePathToSaveAs);
+        drge_subeditor_update_title(pSubEditor, false);
+
+        return true;
+    }
+
+    return false;
+}
+
+
+void drge_subeditor_set_save_proc(drge_subeditor* pSubEditor, drge_subeditor_save_proc proc)
+{
+    assert(ak_is_tool_of_type((drgui_element*)pSubEditor, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR));
+
+    drge_subeditor_data* pSEData = ak_get_tool_extra_data((drgui_element*)pSubEditor);
+    if (pSEData == NULL) {
+        return;
+    }
+
+    pSEData->saveProc = proc;
 }
 
 

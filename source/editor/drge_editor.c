@@ -188,6 +188,25 @@ void drge_editor__on_handle_action(ak_application* pAKApp, const char* pActionNa
     drge_editor* pEditor = *(drge_editor**)ak_get_application_extra_data(pAKApp);
     assert(pEditor != NULL);
 
+    // Opening, saving and closing files.
+    if (strcmp(pActionName, "File.Save") == 0)
+    {
+        // If we fail to save the file we'll switch to a save-as operation.
+        if (!drge_editor_save_focused_file(pEditor)) {
+            ak_handle_action(pAKApp, "File.SaveAs");
+        }
+
+        return;
+    }
+
+    if (strcmp(pActionName, "File.SaveAs") == 0)
+    {
+        // TODO: Show a Save As dialog.
+        return;
+    }
+
+
+
     // Basic editing actions.
     if (strcmp(pActionName, "Edit.SelectAll") == 0 ||
         strcmp(pActionName, "Edit.Undo") == 0 ||
@@ -390,6 +409,25 @@ bool drge_editor_open_file(drge_editor* pEditor, const char* filePath)
 
 
     return true;
+}
+
+bool drge_editor_save_focused_file(drge_editor* pEditor)
+{
+    if (pEditor == NULL) {
+        return false;
+    }
+
+    drge_subeditor* pFocusedSubEditor = drge_editor_get_focused_subeditor(pEditor);
+    if (pFocusedSubEditor == NULL) {
+        return false;
+    }
+
+    const char* absolutePathToSaveAs = drge_subeditor_get_absolute_path(pFocusedSubEditor);
+    if (absolutePathToSaveAs == NULL || absolutePathToSaveAs[0] == '\0') {
+        return false;   // The focused sub-editor is not linked to a file.
+    }
+
+    return drge_subeditor_save_to_file(pFocusedSubEditor, absolutePathToSaveAs);
 }
 
 bool drge_editor_try_focus_file_by_path(drge_editor* pEditor, const char* filePath)

@@ -3,6 +3,9 @@
 // A sub-editor is just a GUI element and can be safely cast between the two.
 typedef struct drgui_element drge_subeditor;
 
+typedef bool (* drge_subeditor_save_proc)(drge_subeditor* pSubEditor, const char* absolutePathToSaveAs);
+
+
 // Creates a sub-editor tool. Sub-editors are usually tied to a file, but not always so filePath can be NULL. Note
 // that this is just an allocation function - you will likely want to call this from a higher level function such
 // as drge_editor_create_text_editor().
@@ -22,6 +25,14 @@ size_t drge_subeditor_get_extra_data_size(drge_subeditor* pSubEditor);
 
 // Retrieves a pointer to the extra data associated with the given sub-editor.
 void* drge_subeditor_get_extra_data(drge_subeditor* pSubEditor);
+
+
+// Saves the given sub-editor to the given file path.
+bool drge_subeditor_save_to_file(drge_subeditor* pSubEditor, const char* absolutePathToSaveAs);
+
+
+// Sets the function to call when the given sub-editor needs to be saved.
+void drge_subeditor_set_save_proc(drge_subeditor* pSubEditor, drge_subeditor_save_proc proc);
 
 
 // Updates the title of the given sub-editor based on the name of the file it's linked to.
