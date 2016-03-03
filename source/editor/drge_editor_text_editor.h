@@ -36,11 +36,11 @@ void drge_text_editor__goto_line(drgui_element* pTextEditor, size_t lineNumber);
 // The given ratio should be between 0 and 100.
 void drge_text_editor__goto_ratio(drgui_element* pTextEditor, size_t ratio);
 
-/// Finds and selects the next occurance of the given string, starting from the cursor and looping back to the start.
+// Finds and selects the next occurance of the given string, starting from the cursor and looping back to the start.
 bool drge_text_editor__find_and_select_next(drgui_element* pTextEditor, const char* text);
 
-/// Finds the next occurance of the given string and replaces it with another.
+// Finds the next occurance of the given string and replaces it with another.
 bool drge_text_editor__find_and_replace_next(drgui_element* pTextEditor, const char* text, const char* replacement);
 
-/// Finds every occurance of the given string and replaces it with another.
+// Finds every occurance of the given string and replaces it with another.
 bool drge_text_editor__find_and_replace_all(drgui_element* pTextEditor, const char* text, const char* replacement);

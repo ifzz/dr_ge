@@ -1,6 +1,55 @@
 // Public domain. See "unlicense" statement at the end of dr_ge.h.
 
 
+drge_subeditor* drge_editor__create_sub_editor_by_type(drge_editor* pEditor, const char* filePath, drge_asset_type type)
+{
+    // Sub-editors expect the file path to be absolute. We'll need to handle that.
+    char absolutePath[DRVFS_MAX_PATH];
+    if (!drvfs_find_absolute_path(pEditor->pContext->pVFS, filePath, absolutePath, sizeof(absolutePath))) {
+        drge_errorf(pEditor->pContext, "Failed to find absolute path of \"%s\". Check that the file exists.", filePath);
+        return NULL;
+    }
+
+    // We'll treat unknown types as text files.
+    if (type == drge_asset_type_text || type == drge_asset_type_unknown) {
+        return drge_editor_create_text_editor(pEditor, absolutePath);
+    }
+
+    if (type == drge_asset_type_image) {
+        return drge_editor_create_image_editor(pEditor, absolutePath);
+    }
+
+
+    // Unsupported type.
+    return NULL;
+}
+
+void drge_editor__delete_subeditor(drge_editor* pEditor, drge_subeditor* pSubEditor)
+{
+    assert(pEditor != NULL);
+    assert(pSubEditor != NULL);
+
+    ak_panel_detach_tool(ak_get_tool_panel(pSubEditor), pSubEditor);
+
+    // If we are deleting that last tool we'll need to ensure the main menu and status bar are reset to their defaults.
+    if (drge_editor_get_focused_subeditor(pEditor) == NULL) {
+        //drge_editor_update_main_menu(pEditor);
+        drge_editor_update_status_bar(pEditor);
+    }
+
+
+    if (ak_is_tool_of_type(pSubEditor, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR)) {
+        drge_editor_delete_text_editor(pSubEditor);
+        return;
+    }
+
+    if (ak_is_tool_of_type(pSubEditor, DRGE_EDITOR_TOOL_TYPE_IMAGE_EDITOR)) {
+        drge_editor_delete_image_editor(pSubEditor);
+        return;
+    }
+}
+
+
 // Opens all of the files specified on the command line as "--editor <file>".
 bool drge_editor__open_files_on_cmdline_callback(const char* key, const char* value, void* pUserData)
 {
@@ -115,6 +164,64 @@ bool drge_editor__on_run(ak_application* pAKApp)
     drge_editor__open_files_on_cmdline(pEditor);
 
     return true;
+}
+
+static drgui_element* drge_editor__on_create_tool(ak_application* pApplication, ak_window* pWindow, const char* type, const char* attributes)
+{
+    (void)attributes;
+
+    drge_editor* pEditor = *(drge_editor**)ak_get_application_extra_data(pApplication);
+    assert(pEditor != NULL);
+
+    if (strcmp(type, DRGE_EDITOR_TOOL_TYPE_MAIN_MENU) == 0) {
+        return NULL;
+    }
+
+    return NULL;
+}
+
+static bool drge_editor__on_delete_tool(ak_application* pApplication, drgui_element* pTool, bool force)
+{
+    (void)force;
+
+    drge_editor* pEditor = *(drge_editor**)ak_get_application_extra_data(pApplication);
+    assert(pEditor != NULL);
+
+    if (pTool == NULL) {
+        return false;
+    }
+
+    if (ak_is_tool_of_type(pTool, DRGE_EDITOR_TOOL_TYPE_MAIN_MENU))
+    {
+        return true;
+    }
+
+    if (ak_is_tool_of_type(pTool, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR))
+    {
+        // TODO: Check for modifications and show a dialog, but only if <force> is false..
+#if 0
+        virtual_file* pFile = ide_get_file_linked_to_tool(pTool);
+        if (pFile != NULL)
+        {
+            ide_unlink_tool_from_file(pTool);
+            file_manager_close_file(pFile);
+        }
+
+        ak_panel_detach_tool(ak_get_tool_panel(pTool), pTool);
+        ide_delete_tool(pTool);
+
+        drgui_element* pFocusedTool = ide_get_focused_tool(pApplication);
+        if (pFocusedTool == NULL) {
+            ide_change_main_menu_by_tool_type(pIDE->pMainMenu, NULL, false);
+        }
+#endif
+
+        drge_editor__delete_subeditor(pEditor, pTool);
+        return true;
+    }
+
+
+    return false;
 }
 
 void drge_editor__on_key_down(ak_application* pAKApp, ak_window* pWindow, drgui_key key, int stateFlags)
@@ -345,29 +452,6 @@ static int drge_editor__on_exec(ak_application* pApplication, const char* cmd)
 }
 
 
-drge_subeditor* drge_editor__create_sub_editor_by_type(drge_editor* pEditor, const char* filePath, drge_asset_type type)
-{
-    // Sub-editors expect the file path to be absolute. We'll need to handle that.
-    char absolutePath[DRVFS_MAX_PATH];
-    if (!drvfs_find_absolute_path(pEditor->pContext->pVFS, filePath, absolutePath, sizeof(absolutePath))) {
-        drge_errorf(pEditor->pContext, "Failed to find absolute path of \"%s\". Check that the file exists.", filePath);
-        return NULL;
-    }
-
-    // We'll treat unknown types as text files.
-    if (type == drge_asset_type_text || type == drge_asset_type_unknown) {
-        return drge_editor_create_text_editor(pEditor, absolutePath);
-    }
-
-    if (type == drge_asset_type_image) {
-        return drge_editor_create_image_editor(pEditor, absolutePath);
-    }
-
-
-    // Unsupported type.
-    return NULL;
-}
-
 drge_subeditor* drge_editor__find_subeditor_by_absolute_path(drge_editor* pEditor, const char* absolutePath)
 {
     if (pEditor == NULL || absolutePath == NULL) {
@@ -449,6 +533,8 @@ drge_editor* drge_create_editor(drge_context* pContext)
     ak_set_log_callback(pEditor->pAKApp, drge_editor__on_log_from_appkit);
     ak_set_on_default_config(pEditor->pAKApp, drge_editor__on_get_default_config);
     ak_set_on_run(pEditor->pAKApp, drge_editor__on_run);
+    ak_set_on_create_tool(pEditor->pAKApp, drge_editor__on_create_tool);
+    ak_set_on_delete_tool(pEditor->pAKApp, drge_editor__on_delete_tool);
     ak_set_on_key_down(pEditor->pAKApp, drge_editor__on_key_down);
     ak_set_on_tool_activated(pEditor->pAKApp, drge_editor__on_tool_activated);
     ak_set_on_tool_deactivated(pEditor->pAKApp, drge_editor__on_tool_deactivated);
@@ -671,11 +757,15 @@ void drge_editor_update_status_bar(drge_editor* pEditor)
 
     drge_subeditor* pSubEditor = drge_editor_get_focused_subeditor(pEditor);
     if (pSubEditor == NULL) {
-        return;
+        drge_editor_command_bar_set_context_by_tool_type(pEditor->pCmdBar, NULL);
     }
+
+    drge_editor_command_bar_set_context_by_tool_type(pEditor->pCmdBar, ak_get_tool_type(pSubEditor));
+
 
     if (ak_is_tool_of_type(pSubEditor, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR)) {
         drge_editor_update_status_bar__text_editor(pEditor, drge_text_editor__get_cursor_line(pSubEditor) + 1, drge_text_editor__get_cursor_column(pSubEditor) + 1);
+        return;
     }
 }
 

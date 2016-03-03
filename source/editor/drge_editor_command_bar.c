@@ -240,15 +240,15 @@ void drge_editor_command_bar_set_command_text(drgui_element* pCmdBarTool, const 
 static drgui_element* drge_editor_command_bar__get_info_container_by_tool_type(drgui_element* pCmdBarTool, const char* pToolType)
 {
     drge_editor_command_bar* pCmdBar = ak_get_tool_extra_data(pCmdBarTool);
-    if (pCmdBar == NULL || pToolType == NULL) {
+    if (pCmdBar == NULL) {
         return NULL;
     }
 
     if (ak_is_of_tool_type(pToolType, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR)) {
         return pCmdBar->pTextEditorInfo;
-    } else {
-        return pCmdBar->pNullInfo;
     }
+
+    return pCmdBar->pNullInfo;
 }
 
 static void drge_editor_command_bar__on_size(drgui_element* pCmdBarTool, float newWidth, float newHeight)
