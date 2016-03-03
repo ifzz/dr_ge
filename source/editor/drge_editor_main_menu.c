@@ -327,7 +327,7 @@ void drge_editor_change_main_menu_by_tool_type(drgui_element* pMMTool, const cha
     }
 
 
-    if (strncmp(type, "Editor.Text", strlen("Editor.Text")) == 0) {
+    if (strncmp(type, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR, strlen(DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR)) == 0) {
         drge_editor_enable_text_editor_menu_items(pMMTool, readOnly);
     }
 

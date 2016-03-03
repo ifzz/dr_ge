@@ -33,7 +33,7 @@ void drge_editor__delete_subeditor(drge_editor* pEditor, drge_subeditor* pSubEdi
 
     // If we are deleting that last tool we'll need to ensure the main menu and status bar are reset to their defaults.
     if (drge_editor_get_focused_subeditor(pEditor) == NULL) {
-        //drge_editor_update_main_menu(pEditor);
+        drge_editor_update_main_menu(pEditor);
         drge_editor_update_status_bar(pEditor);
     }
 
@@ -263,8 +263,14 @@ void drge_editor__on_tool_activated(ak_application* pAKApp, drgui_element* pTool
     assert(pEditor != NULL);
 
     // If it was a sub-editor that became focused we'll need to update the main menu and command bar.
-    if (ak_is_tool_of_type(pTool, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR)) {
+    if (ak_is_tool_of_type(pTool, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR))
+    {
         drgui_capture_keyboard(pTool);
+
+        // Main menu.
+        drge_editor_update_main_menu(pEditor);
+
+        // Command bar.
         drge_editor_command_bar_set_context_by_tool_type(pEditor->pCmdBar, ak_get_tool_type(pTool));
         drge_editor_update_status_bar(pEditor);
     }
@@ -731,6 +737,21 @@ void drge_editor_focus_command_bar_and_set_command(drge_editor* pEditor, const c
 {
     drge_editor_focus_command_bar(pEditor);
     drge_editor_command_bar_set_command_text(drge_editor_get_command_bar(pEditor), cmd);
+}
+
+
+void drge_editor_update_main_menu(drge_editor* pEditor)
+{
+    if (pEditor == NULL) {
+        return;
+    }
+
+    drge_subeditor* pSubEditor = drge_editor_get_focused_subeditor(pEditor);
+    if (pSubEditor == NULL) {
+        drge_editor_change_main_menu_by_tool_type(pEditor->pMainMenu, NULL, false);
+    }
+
+    drge_editor_change_main_menu_by_tool_type(pEditor->pMainMenu, ak_get_tool_type(pSubEditor), drge_subeditor_is_read_only(pSubEditor));
 }
 
 

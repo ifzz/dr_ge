@@ -93,6 +93,9 @@ void drge_editor_focus_command_bar(drge_editor* pEditor);
 void drge_editor_focus_command_bar_and_set_command(drge_editor* pEditor, const char* cmd);
 
 
+// Updates the main menu based on the currently focused sub-editor.
+void drge_editor_update_main_menu(drge_editor* pEditor);
+
 // Updates the status section of the command bar based on the currently focused sub-editor.
 void drge_editor_update_status_bar(drge_editor* pEditor);
 
