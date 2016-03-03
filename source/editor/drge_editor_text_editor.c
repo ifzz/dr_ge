@@ -239,3 +239,63 @@ size_t drge_text_editor__get_cursor_column(drge_subeditor* pTextEditor)
 
     return drgui_textbox_get_cursor_column(pTEData->pTextBox);
 }
+
+
+void drge_text_editor__goto_line(drgui_element* pTextEditor, size_t lineNumber)
+{
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    if (lineNumber == 0) {
+        lineNumber = 1;
+    }
+    if (lineNumber > drgui_textbox_get_line_count(pTEData->pTextBox)) {
+        lineNumber = drgui_textbox_get_line_count(pTEData->pTextBox);
+    }
+
+    drgui_textbox_move_cursor_to_start_of_line_by_index(pTEData->pTextBox, lineNumber - 1);
+}
+
+void drge_text_editor__goto_ratio(drgui_element* pTextEditor, size_t ratio)
+{
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    if (ratio > 100) {
+        ratio = 100;
+    }
+
+    drge_text_editor__goto_line(pTextEditor, (size_t)(roundf(drgui_textbox_get_line_count(pTEData->pTextBox) * (ratio/100.0f))));
+}
+
+bool drge_text_editor__find_and_select_next(drgui_element* pTextEditor, const char* text)
+{
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    return drgui_textbox_find_and_select_next(pTEData->pTextBox, text);
+}
+
+bool drge_text_editor__find_and_replace_next(drgui_element* pTextEditor, const char* text, const char* replacement)
+{
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    if (!drge_subeditor_is_read_only(pTextEditor)) {
+        return drgui_textbox_find_and_replace_next(pTEData->pTextBox, text, replacement);
+    }
+    
+    return false;
+}
+
+bool drge_text_editor__find_and_replace_all(drgui_element* pTextEditor, const char* text, const char* replacement)
+{
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    if (!drge_subeditor_is_read_only(pTextEditor)) {
+        return drgui_textbox_find_and_replace_all(pTEData->pTextBox, text, replacement);
+    }
+    
+    return false;
+}

@@ -229,7 +229,8 @@ void drge_editor__on_handle_action(ak_application* pAKApp, const char* pActionNa
 
 static int drge_editor__on_exec(ak_application* pApplication, const char* cmd)
 {
-    (void)pApplication;
+    drge_editor* pEditor = *(drge_editor**)ak_get_application_extra_data(pApplication);
+    assert(pEditor != NULL);
 
     char func[256];
     cmd = dr_next_token(cmd, func, sizeof(func));
@@ -237,7 +238,109 @@ static int drge_editor__on_exec(ak_application* pApplication, const char* cmd)
         return 0;
     }
 
+    drgui_element* pFocusedSubEditor = drge_editor_get_focused_subeditor(pEditor);
+
     int result = 0;
+    if (strcmp(func, "goto") == 0)
+    {
+        if (ak_is_tool_of_type(pFocusedSubEditor, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR))
+        {
+            char param[256];
+            if (dr_next_token(cmd, param, sizeof(param)) != NULL)
+            {
+                // If the last character is a %, we use a ratio based goto.
+                if (param[strlen(param) - 1] == '%') {
+                    param[strlen(param) - 1] = '\0';
+                    drge_text_editor__goto_ratio(pFocusedSubEditor, (unsigned int)abs(atoi(param)));
+                } else {
+                    drge_text_editor__goto_line(pFocusedSubEditor, (unsigned int)abs(atoi(param)));
+                }
+
+                result |= DRGE_CMDBAR_RELEASE_KEYBOARD;
+            }
+        }
+
+        return result;
+    }
+
+    if (strcmp(func, "find") == 0 || strcmp(func, "find-next") == 0)
+    {
+        if (ak_is_tool_of_type(pFocusedSubEditor, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR))
+        {
+            char query[1024];
+            if (dr_next_token(cmd, query, sizeof(query)) != NULL)
+            {
+                if (!drge_text_editor__find_and_select_next(pFocusedSubEditor, query)) {
+                    // TODO: Display a message.
+                }
+            }
+
+            // The difference between "find" and "find-next" is that "find-next" keeps keyboard focus on the command bar so the
+            // user can cycle through results.
+            if (strcmp(func, "find-next") == 0) {
+                result |= DRGE_CMDBAR_NO_CLEAR;
+            } else {
+                result |= DRGE_CMDBAR_RELEASE_KEYBOARD;
+            }
+        }
+
+        return result;
+    }
+
+    if (strcmp(func, "replace") == 0 || strcmp(func, "replace-next") == 0)
+    {
+        if (ak_is_tool_of_type(pFocusedSubEditor, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR))
+        {
+            char query[1024];
+            cmd = dr_next_token(cmd, query, sizeof(query));
+            if (cmd != NULL)
+            {
+                char replacement[1024];
+                cmd = dr_next_token(cmd, replacement, sizeof(replacement));
+                if (cmd != NULL)
+                {
+                    if (!drge_text_editor__find_and_replace_next(pFocusedSubEditor, query, replacement)) {
+                        // TODO: Display a message.
+                    }
+                }
+            }
+
+            // The difference between "replace" and "replace-next" is that "replace-next" keeps keyboard focus on the command bar so the
+            // user can cycle through results.
+            if (strcmp(func, "replace-next") == 0) {
+                result |= DRGE_CMDBAR_NO_CLEAR;
+            } else {
+                result |= DRGE_CMDBAR_RELEASE_KEYBOARD;
+            }
+        }
+
+        return result;
+    }
+
+    if (strcmp(func, "replace-all") == 0)
+    {
+        if (ak_is_tool_of_type(pFocusedSubEditor, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR))
+        {
+            char query[1024];
+            cmd = dr_next_token(cmd, query, sizeof(query));
+            if (cmd != NULL)
+            {
+                char replacement[1024];
+                cmd = dr_next_token(cmd, replacement, sizeof(replacement));
+                if (cmd != NULL)
+                {
+                    if (!drge_text_editor__find_and_replace_all(pFocusedSubEditor, query, replacement)) {
+                        // TODO: Display a message.
+                    }
+                }
+            }
+
+            result |= DRGE_CMDBAR_RELEASE_KEYBOARD;
+        }
+
+        return result;
+    }
+
     return result;
 }
 
