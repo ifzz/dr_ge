@@ -15,6 +15,10 @@ void drge_editor_change_main_menu_by_tool_type(drgui_element* pMMTool, const cha
 // Disables the menu items for when there are no editors open.
 void drge_editor_disable_text_editor_menu_items(drgui_element* pMMTool);
 
+
+// Enables the menu items specific to sub-editors.
+void drge_editor_enable_sub_editor_menu_items(drgui_element* pMMTool, bool readOnly);
+
 // Enables the menu items specific to text editors.
 void drge_editor_enable_text_editor_menu_items(drgui_element* pMMTool, bool readOnly);
 

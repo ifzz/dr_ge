@@ -327,9 +327,14 @@ void drge_editor_change_main_menu_by_tool_type(drgui_element* pMMTool, const cha
     }
 
 
-    if (strncmp(type, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR, strlen(DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR)) == 0) {
-        drge_editor_enable_text_editor_menu_items(pMMTool, readOnly);
+    if (ak_is_of_tool_type(type, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR)) {
+        if (ak_is_of_tool_type(type, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR)) {
+            drge_editor_enable_text_editor_menu_items(pMMTool, readOnly);
+        } else {
+            drge_editor_enable_sub_editor_menu_items(pMMTool, readOnly);
+        }
     }
+    
 
     strcpy_s(pMM->currentToolType, sizeof(pMM->currentToolType), type);
     pMM->currentToolReadOnly = readOnly;
@@ -365,7 +370,8 @@ void drge_editor_disable_text_editor_menu_items(drgui_element* pMMTool)
     ak_mi_disable(pMM->pFind_GoTo);
 }
 
-void drge_editor_enable_text_editor_menu_items(drgui_element* pMMTool, bool readOnly)
+
+void drge_editor_enable_sub_editor_menu_items(drgui_element* pMMTool, bool readOnly)
 {
     drge_editor_main_menu_tool* pMM = ak_get_tool_extra_data(pMMTool);
     if (pMM == NULL) {
@@ -377,6 +383,21 @@ void drge_editor_enable_text_editor_menu_items(drgui_element* pMMTool, bool read
     ak_mi_enable(pMM->pFile_Close);
     ak_mi_enable(pMM->pFile_CloseAll);
 
+    if (!readOnly)
+    {
+        ak_mi_enable(pMM->pFile_Save);
+    }
+}
+
+void drge_editor_enable_text_editor_menu_items(drgui_element* pMMTool, bool readOnly)
+{
+    drge_editor_enable_sub_editor_menu_items(pMMTool, readOnly);
+
+    drge_editor_main_menu_tool* pMM = ak_get_tool_extra_data(pMMTool);
+    if (pMM == NULL) {
+        return;
+    }
+
     ak_mi_enable(pMM->pEdit_SelectAll);
 
     ak_mi_enable(pMM->pView_StatusBar);
@@ -387,8 +408,6 @@ void drge_editor_enable_text_editor_menu_items(drgui_element* pMMTool, bool read
 
     if (!readOnly)
     {
-        ak_mi_enable(pMM->pFile_Save);
-
         ak_mi_enable(pMM->pEdit_Undo);
         ak_mi_enable(pMM->pEdit_Redo);
         ak_mi_enable(pMM->pEdit_Cut);
