@@ -41,10 +41,10 @@ void drge_editor_command_bar_set_command_text(drgui_element* pCmdBarTool, const 
 //// Text Editor Context ////
 
 // Sets the line number for text editor info.
-void drge_editor_command_bar_set_text_editor_line_number(drgui_element* pCmdBarTool, unsigned int lineNumber);
+void drge_editor_command_bar_set_text_editor_line_number(drgui_element* pCmdBarTool, size_t lineNumber);
 
 // Sets the text editor column number.
-void drge_editor_command_bar_set_text_editor_column_number(drgui_element* pCmdBarTool, unsigned int columnNumber);
+void drge_editor_command_bar_set_text_editor_column_number(drgui_element* pCmdBarTool, size_t columnNumber);
 
 // Sets the text editor character number.
-void drge_editor_command_bar_set_text_editor_character_number(drgui_element* pCmdBarTool, unsigned int characterNumber);
+void drge_editor_command_bar_set_text_editor_character_number(drgui_element* pCmdBarTool, size_t characterNumber);

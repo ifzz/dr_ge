@@ -167,6 +167,7 @@ void drge_editor__on_tool_activated(ak_application* pAKApp, drgui_element* pTool
     if (ak_is_tool_of_type(pTool, DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR)) {
         drgui_capture_keyboard(pTool);
         drge_editor_command_bar_set_context_by_tool_type(pEditor->pCmdBar, ak_get_tool_type(pTool));
+        drge_editor_update_status_bar(pEditor);
     }
 }
 
@@ -513,11 +514,30 @@ void drge_editor_focus_command_bar_and_set_command(drge_editor* pEditor, const c
 }
 
 
-void drge_editor_update_command_bar__text_editor(drge_editor* pEditor, unsigned int lineNumber, unsigned int columnNumber)
+void drge_editor_update_status_bar__text_editor(drge_editor* pEditor, size_t lineNumber, size_t columnNumber)
 {
+    assert(pEditor != NULL);
+
     drge_editor_command_bar_set_text_editor_line_number(pEditor->pCmdBar, lineNumber);
     drge_editor_command_bar_set_text_editor_column_number(pEditor->pCmdBar, columnNumber);
 }
+
+void drge_editor_update_status_bar(drge_editor* pEditor)
+{
+    if (pEditor == NULL) {
+        return;
+    }
+
+    drge_subeditor* pSubEditor = drge_editor_get_focused_subeditor(pEditor);
+    if (pSubEditor == NULL) {
+        return;
+    }
+
+    if (ak_is_tool_of_type(pSubEditor, DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR)) {
+        drge_editor_update_status_bar__text_editor(pEditor, drge_text_editor__get_cursor_line(pSubEditor) + 1, drge_text_editor__get_cursor_column(pSubEditor) + 1);
+    }
+}
+
 
 void drge_editor_on_command_bar_capture_keyboard(drge_editor* pEditor, drgui_element* pPrevCapturedElement)
 {

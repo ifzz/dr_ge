@@ -7,7 +7,7 @@ typedef struct
 
 } drge_text_subeditor_data;
 
-void drge_text_editor__on_capture_keyboard(drgui_element* pTextEditor, drgui_element* pPrevCapturedElement)
+static void drge_text_editor__on_capture_keyboard(drgui_element* pTextEditor, drgui_element* pPrevCapturedElement)
 {
     // When the main tool receives keyboard focus we actually want to divert it to the text box.
     drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
@@ -18,7 +18,7 @@ void drge_text_editor__on_capture_keyboard(drgui_element* pTextEditor, drgui_ele
     }
 }
 
-void drge_text_editor__on_handle_action(drgui_element* pTextEditor, const char* pActionName)
+static void drge_text_editor__on_handle_action(drgui_element* pTextEditor, const char* pActionName)
 {
     drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
     assert(pTEData != NULL);
@@ -85,6 +85,7 @@ void drge_text_editor__on_handle_action(drgui_element* pTextEditor, const char* 
     }
 }
 
+
 static void drge_text_editor__on_key_down__textbox(drgui_element* pTextBox, drgui_key key, int stateFlags)
 {
     drgui_element* pTextEditor = *(drgui_element**)ak_textbox_get_extra_data(pTextBox);
@@ -104,6 +105,15 @@ static void drge_text_editor__on_key_down__textbox(drgui_element* pTextBox, drgu
     }
 }
 
+static void drge_text_editor__on_cursor_move__textbox(drgui_element* pTextBox)
+{
+    // The editor's status bar will need to be updated based on the caret's new position.
+    drgui_element* pTextEditor = *(drgui_element**)ak_textbox_get_extra_data(pTextBox);
+    assert(pTextEditor != NULL);
+
+    drge_editor_update_status_bar(drge_subeditor_get_editor(pTextEditor));
+}
+
 drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char* fileAbsolutePath)
 {
     // A text editor is just a sub-editor.
@@ -119,6 +129,7 @@ drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char*
     drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
     pTEData->pTextBox = ak_create_textbox(pEditor->pAKApp, (drgui_element*)pTextEditor, sizeof(&pTextEditor), &pTextEditor);
     drgui_set_on_key_down(pTEData->pTextBox, drge_text_editor__on_key_down__textbox);
+    drgui_textbox_set_on_cursor_move(pTEData->pTextBox, drge_text_editor__on_cursor_move__textbox);
     drgui_textbox_set_vertical_align(pTEData->pTextBox, drgui_text_layout_alignment_top);
     
     
@@ -170,4 +181,21 @@ void drge_editor_text_subeditor__hide_line_numbers(drge_subeditor* pTextEditor)
     assert(pTEData != NULL);
 
     // TODO: Implement me.
+}
+
+
+size_t drge_text_editor__get_cursor_line(drge_subeditor* pTextEditor)
+{
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    return drgui_textbox_get_cursor_line(pTEData->pTextBox);
+}
+
+size_t drge_text_editor__get_cursor_column(drge_subeditor* pTextEditor)
+{
+    drge_text_subeditor_data* pTEData = drge_subeditor_get_extra_data(pTextEditor);
+    assert(pTEData != NULL);
+
+    return drgui_textbox_get_cursor_column(pTEData->pTextBox);
 }

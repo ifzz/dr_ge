@@ -2,13 +2,13 @@
 typedef struct
 {
     /// the line number.
-    unsigned int lineNumber;
+    size_t lineNumber;
 
     /// The column number.
-    unsigned int columnNumber;
+    size_t columnNumber;
 
     /// The character number.
-    unsigned int characterNumber;
+    size_t characterNumber;
 
 } drge_editor_command_bar__text_info;
 
@@ -376,7 +376,7 @@ static void drge_editor_command_bar__on_paint__null(drgui_element* pContainerEle
 
 //// Text Editor Context ////
 
-void drge_editor_command_bar_set_text_editor_line_number(drgui_element* pCmdBarTool, unsigned int lineNumber)
+void drge_editor_command_bar_set_text_editor_line_number(drgui_element* pCmdBarTool, size_t lineNumber)
 {
     drge_editor_command_bar* pCmdBar = ak_get_tool_extra_data(pCmdBarTool);
     if (pCmdBar == NULL) {
@@ -390,7 +390,7 @@ void drge_editor_command_bar_set_text_editor_line_number(drgui_element* pCmdBarT
     }
 }
 
-void drge_editor_command_bar_set_text_editor_column_number(drgui_element* pCmdBarTool, unsigned int columnNumber)
+void drge_editor_command_bar_set_text_editor_column_number(drgui_element* pCmdBarTool, size_t columnNumber)
 {
     drge_editor_command_bar* pCmdBar = ak_get_tool_extra_data(pCmdBarTool);
     if (pCmdBar == NULL) {
@@ -404,7 +404,7 @@ void drge_editor_command_bar_set_text_editor_column_number(drgui_element* pCmdBa
     }
 }
 
-void drge_editor_command_bar_set_text_editor_character_number(drgui_element* pCmdBarTool, unsigned int characterNumber)
+void drge_editor_command_bar_set_text_editor_character_number(drgui_element* pCmdBarTool, size_t characterNumber)
 {
     drge_editor_command_bar* pCmdBar = ak_get_tool_extra_data(pCmdBarTool);
     if (pCmdBar == NULL) {
@@ -441,10 +441,10 @@ static void drge_editor_command_bar__on_paint__text_editor(drgui_element* pConta
 
 
     char lnStr[64];
-    int lnStrLen = snprintf(lnStr, sizeof(lnStr), "Ln %d", pCmdBar->textEditorInfo.lineNumber);
+    int lnStrLen = snprintf(lnStr, sizeof(lnStr), "Ln %llu", (uint64_t)pCmdBar->textEditorInfo.lineNumber);
 
     char colStr[64];
-    int colStrLen = snprintf(colStr, sizeof(colStr), "Col %d", pCmdBar->textEditorInfo.columnNumber);
+    int colStrLen = snprintf(colStr, sizeof(colStr), "Col %llu", (uint64_t)pCmdBar->textEditorInfo.columnNumber);
 
 
     float offsetX = drgui_get_width(pContainerElement) - (segmentWidth * 2);

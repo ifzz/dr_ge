@@ -19,3 +19,10 @@ void drge_editor_text_subeditor__show_line_numbers(drge_subeditor* pTextEditor);
 
 // Hides the line numbers.
 void drge_editor_text_subeditor__hide_line_numbers(drge_subeditor* pTextEditor);
+
+
+// Retrieves the index of the line the caret is currently sitting on.
+size_t drge_text_editor__get_cursor_line(drge_subeditor* pTextEditor);
+
+// Retrieves the index of the column the caret is currently sitting on.
+size_t drge_text_editor__get_cursor_column(drge_subeditor* pTextEditor);

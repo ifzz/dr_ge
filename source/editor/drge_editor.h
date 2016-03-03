@@ -87,8 +87,8 @@ void drge_editor_focus_command_bar(drge_editor* pEditor);
 void drge_editor_focus_command_bar_and_set_command(drge_editor* pEditor, const char* cmd);
 
 
-// Updates the command bar based on the context of a text editor.
-void drge_editor_update_command_bar__text_editor(drge_editor* pEditor, unsigned int lineNumber, unsigned int columnNumber);
+// Updates the status section of the command bar based on the currently focused sub-editor.
+void drge_editor_update_status_bar(drge_editor* pEditor);
 
 // Called from the command bar when it receives keyboard focus. This gives the application a chance to show the command bar.
 void drge_editor_on_command_bar_capture_keyboard(drge_editor* pEditor, drgui_element* pPrevCapturedElement);
