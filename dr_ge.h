@@ -82,6 +82,12 @@
 
 // dr_libs headers.
 #define DR_GUI_INCLUDE_WIP
+#define DR_WAV_NO_STDIO
+#define DR_FLAC_NO_STDIO
+
+#ifdef _WIN32
+#define VK_USE_PLATFORM_WIN32_KHR
+#endif
 
 #ifdef DR_GE_USE_EXTERNAL_REPOS
 #include "../dr_libs/dr_util.h"
@@ -175,9 +181,6 @@
 #define DR_MTL_IMPLEMENTATION
 #define DR_MATH_IMPLEMENTATION
 #define DR_VULKAN_IMPLEMENTATION
-
-#define DR_WAV_NO_STDIO
-#define DR_FLAC_NO_STDIO
 
 #ifdef DR_GE_USE_EXTERNAL_REPOS
 #include "../dr_libs/dr_util.h"
