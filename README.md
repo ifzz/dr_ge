@@ -39,6 +39,7 @@ special handling.
  * dr_appkit (editor only) (https://github.com/mackron/dr_appkit)
  * stb libraries (https://github.com/nothings/stb)
    * stb_image
+   * stb_image_resize
    * stb_vorbis
  
  
