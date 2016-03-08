@@ -154,6 +154,10 @@
 #define STBI_NO_STDIO
 #include "source/external/stb_image.h"
 
+// stb_image_resize
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "source/external/stb_image_resize.h"
+
 // stb_vorbis. This is a special case because if we place the implementation here it results in compiler
 // errors on the Windows build. Suspecting it's due to conflicting types, but not sure. To address this
 // we just place the header here and then place the implementation down the bottom.
