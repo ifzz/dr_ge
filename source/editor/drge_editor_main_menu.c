@@ -255,7 +255,7 @@ drgui_element* drge_editor_create_main_menu_tool(drge_editor* pEditor, drgui_ele
 
     pMM->pHelp_ViewHelp = drge_editor_create_main_menu_item(pMM->pHelpMenu, "View Help (Opens Web Browser)", NULL, NULL, "Help.ViewHelp");
     ak_create_separator_menu_item(pMM->pHelpMenu, 0, NULL);
-    pMM->pHelp_About = drge_editor_create_main_menu_item(pMM->pHelpMenu, "About Bytecode Studio...", NULL, NULL, "Help.ShowAboutDialog");
+    pMM->pHelp_About = drge_editor_create_main_menu_item(pMM->pHelpMenu, "About...", NULL, NULL, "Help.ShowAboutDialog");
 
 
     // Add each item.

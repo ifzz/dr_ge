@@ -19,6 +19,10 @@ drge_subeditor* drge_editor__create_sub_editor_by_type(drge_editor* pEditor, con
         return drge_editor_create_image_editor(pEditor, absolutePath);
     }
 
+    if (type == drge_asset_type_model) {
+        return drge_editor_create_model_editor(pEditor, absolutePath);
+    }
+
 
     // Unsupported type.
     return NULL;
@@ -45,6 +49,11 @@ void drge_editor__delete_subeditor(drge_editor* pEditor, drge_subeditor* pSubEdi
 
     if (ak_is_tool_of_type(pSubEditor, DRGE_EDITOR_TOOL_TYPE_IMAGE_EDITOR)) {
         drge_editor_delete_image_editor(pSubEditor);
+        return;
+    }
+
+    if (ak_is_tool_of_type(pSubEditor, DRGE_EDITOR_TOOL_TYPE_MODEL_EDITOR)) {
+        drge_editor_delete_model_editor(pSubEditor);
         return;
     }
 }

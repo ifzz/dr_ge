@@ -3,5 +3,6 @@
 #define DRGE_EDITOR_TOOL_TYPE_SUB_EDITOR    "DRGE.Editor.SubEditor"
 #define DRGE_EDITOR_TOOL_TYPE_TEXT_EDITOR   "DRGE.Editor.SubEditor.Text"
 #define DRGE_EDITOR_TOOL_TYPE_IMAGE_EDITOR  "DRGE.Editor.SubEditor.Image"
+#define DRGE_EDITOR_TOOL_TYPE_MODEL_EDITOR  "DRGE.Editor.SubEditor.Model"
 #define DRGE_EDITOR_TOOL_TYPE_MAIN_MENU     "DRGE.Editor.MainMenu"
 #define DRGE_EDITOR_TOOL_TYPE_COMMAND_BAR   "DRGE.Editor.CommandBar"

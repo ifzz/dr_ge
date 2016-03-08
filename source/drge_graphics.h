@@ -89,7 +89,7 @@ struct drge_graphics_texture_resource
     VkImage image;
 
     // The backing memory of the image object.
-    VkDeviceMemory memory;
+    VkDeviceMemory imageMemory;
 
     // The image view.
     VkImageView imageView;
@@ -98,6 +98,11 @@ struct drge_graphics_texture_resource
     // The information that was used to create the texture. This is mainly for informational purposes.
     drge_graphics_texture_info info;
 
+
+    // TEMP. This section contains the proxy image that's used to pass the image data back to the host. This is temporary and
+    // will be replaced with a much more memory-efficient implementation.
+    VkImage proxyImage;
+    VkDeviceMemory proxyImageMemory;
 };
 
 struct drge_graphics_material_resource
@@ -121,6 +126,13 @@ struct drge_graphics_world
 
     // The primary device that most graphics operations will go through.
     VkDevice primaryDevice;
+
+    // The queue we'll use for all of our resource management. Any time we create an image, copy image data, etc., it'll go through here.
+    drvk_queue* pResourceQueue;
+
+    // The command buffer we'll use for resource management.
+    VkCommandBuffer resourceCmdBuffer;
+
 
 
     // TEMP. Everything below is just for testing and getting the basics working.

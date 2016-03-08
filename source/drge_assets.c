@@ -15,6 +15,10 @@ drge_asset_type drge_get_asset_type_from_path(const char* path)
         return drge_asset_type_image;
     }
 
+    if (_stricmp(ext, "obj") == 0) {
+        return drge_asset_type_model;
+    }
+
     if (_stricmp(ext, "wav")  == 0 ||
         _stricmp(ext, "flac") == 0 ||
         _stricmp(ext, "ogg")  == 0)
@@ -111,6 +115,38 @@ void drge__unload_image_asset(drge_asset* pAsset)
 }
 
 
+drge_asset* drge__load_model_asset_from_file(drge_context* pContext, drvfs_file* pFile, const char* path)
+{
+    (void)path;
+
+    assert(pContext != NULL);
+    assert(pFile != NULL);
+    assert(path != NULL);
+
+    // TODO: Implement Me.
+
+    drge_model_asset* pModelAsset = malloc(sizeof(drge_model_asset));
+    if (pModelAsset == NULL) {
+        return NULL;
+    }
+
+    return (drge_asset*)pModelAsset;
+}
+
+void drge__unload_model_asset(drge_asset* pAsset)
+{
+    assert(pAsset != NULL);
+    assert(pAsset->type == drge_asset_type_model);
+
+    drge_model_asset* pModelAsset = (drge_model_asset*)pAsset;
+    if (pModelAsset == NULL) {
+        return;
+    }
+
+    free(pModelAsset);
+}
+
+
 void drge__cache_asset(drge_asset* pAsset)
 {
     assert(pAsset != NULL);
@@ -160,6 +196,10 @@ drge_asset* drge_load_asset(drge_context* pContext, const char* path)
             pAsset = (drge_asset*)drge__load_image_asset_from_file(pContext, pFile, path);
         } break;
 
+        case drge_asset_type_model:
+        {
+            pAsset = (drge_asset*)drge__load_model_asset_from_file(pContext, pFile, path);
+        } break;
 
         default: break;
     }
@@ -193,7 +233,8 @@ void drge_unload_asset(drge_asset* pAsset)
 
     switch (pAsset->type)
     {
-    case drge_asset_type_image: drge__unload_image_asset(pAsset);
+    case drge_asset_type_image: drge__unload_image_asset(pAsset); break;
+    case drge_asset_type_model: drge__unload_model_asset(pAsset); break;
     default: break;
     }
 }

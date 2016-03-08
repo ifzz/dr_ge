@@ -14,11 +14,36 @@ drge_graphics_world* drge_create_graphics_world(drvk_context* pVulkan)
     pWorld->pVulkan            = pVulkan;
     pWorld->primaryDeviceIndex = 0;
     pWorld->primaryDevice      = drvkGetDevice(pVulkan, pWorld->primaryDeviceIndex);
+
+    drvk_queue* pQueues[2];
+    VkResult result = drvkFindQueuesWithFlags(pWorld->pVulkan, pWorld->primaryDeviceIndex, VK_QUEUE_GRAPHICS_BIT, 2, pQueues);
+    if (result != VK_SUCCESS) {
+        free(pWorld);
+        return NULL;
+    }
+    
+    pWorld->pResourceQueue = pQueues[0];
+
+
+    VkCommandBufferAllocateInfo bufferAllocInfo;
+    bufferAllocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    bufferAllocInfo.pNext              = NULL;
+    bufferAllocInfo.commandBufferCount = 1;
+    bufferAllocInfo.commandPool        = pWorld->pResourceQueue->commandPool;
+    bufferAllocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    result = vkAllocateCommandBuffers(drvkGetDevice(pVulkan, 0), &bufferAllocInfo, &pWorld->resourceCmdBuffer);
+    if (result != VK_SUCCESS) {
+        free(pWorld);
+        return NULL;
+    }
+
     
 
 
+
     // Everything below is temp.
-    pWorld->pGraphicsQueue = drvkFindFirstQueueWithFlags(pVulkan, 0, VK_QUEUE_GRAPHICS_BIT);
+    //pWorld->pGraphicsQueue = drvkFindFirstQueueWithFlags(pVulkan, 0, VK_QUEUE_GRAPHICS_BIT);
+    pWorld->pGraphicsQueue = pQueues[1];
 
     // Create the image we'll draw to.
     VkImageCreateInfo imageInfo;
@@ -41,7 +66,7 @@ drge_graphics_world* drge_create_graphics_world(drvk_context* pVulkan)
     imageInfo.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImage image;
-    VkResult result = vkCreateImage(drvkGetDevice(pVulkan, 0), &imageInfo, NULL, &image);
+    result = vkCreateImage(drvkGetDevice(pVulkan, 0), &imageInfo, NULL, &image);
     if (result != VK_SUCCESS) {
         return NULL;
     }
@@ -93,9 +118,6 @@ drge_graphics_world* drge_create_graphics_world(drvk_context* pVulkan)
 
     
     VkCommandBuffer setupCmdBuffer[2];
-    VkCommandBufferAllocateInfo bufferAllocInfo;
-    bufferAllocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    bufferAllocInfo.pNext              = NULL;
     bufferAllocInfo.commandBufferCount = 2;
     bufferAllocInfo.commandPool        = pWorld->pGraphicsQueue->commandPool;
     bufferAllocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -420,6 +442,22 @@ drge_graphics_resource* drge_graphics_world_create_texture_resource(drge_graphic
     }
 
 
+    // Everything should be good at this point.
+    drge_graphics_texture_resource* pTextureResource = malloc(sizeof(*pTextureResource));
+    if (pTextureResource == NULL) {
+        goto on_error;
+    }
+
+    pTextureResource->type        = drge_graphics_resource_type_texture;
+    pTextureResource->pWorld      = pWorld;
+    pTextureResource->image       = image;
+    pTextureResource->imageMemory = imageMemory;
+    pTextureResource->imageView   = imageView;
+    pTextureResource->info        = *pInfo;
+    pTextureResource->info.pData  = NULL;    // <-- Set this to null for safety since it's likely the caller will free the memory later.
+
+    return (drge_graphics_resource*)pTextureResource;
+
 on_error:
     if (imageView) {
         vkDestroyImageView(pWorld->primaryDevice, imageView, NULL);
@@ -442,8 +480,9 @@ void drge_graphics_world_delete_texture_resource(drge_graphics_resource* pResour
     }
 
 
+    vkDestroyImageView(pResource->pWorld->primaryDevice, pTextureResource->imageView, NULL);
     vkDestroyImage(pResource->pWorld->primaryDevice, pTextureResource->image, NULL);
-    vkFreeMemory(pResource->pWorld->primaryDevice, pTextureResource->memory, NULL);
+    vkFreeMemory(pResource->pWorld->primaryDevice, pTextureResource->imageMemory, NULL);
 
     free(pTextureResource);
 }

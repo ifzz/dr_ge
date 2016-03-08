@@ -138,6 +138,7 @@
 #include "source/editor/drge_editor_sub_editor.h"
 #include "source/editor/drge_editor_text_editor.h"
 #include "source/editor/drge_editor_image_editor.h"
+#include "source/editor/drge_editor_model_editor.h"
 #endif  //DR_GE_DISABLE_EDITOR
 
 
@@ -219,6 +220,7 @@
 #include "source/editor/drge_editor_sub_editor.c"
 #include "source/editor/drge_editor_text_editor.c"
 #include "source/editor/drge_editor_image_editor.c"
+#include "source/editor/drge_editor_model_editor.c"
 
 // dr_appkit
 #define DR_FSW_IMPLEMENTATION
