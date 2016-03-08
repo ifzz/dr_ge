@@ -33,13 +33,13 @@ typedef struct
     DRGE_BASE_ASSET_ATTRIBS
 
     // The width of the image.
-    unsigned int width;
+    uint32_t width;
 
     // The height of the image.
-    unsigned int height;
+    uint32_t height;
 
     // The format of the image data.
-    drge_image_format format;
+    VkFormat format;
 
     // A pointer to the raw image data.
     char pImageData[1];

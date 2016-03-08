@@ -110,15 +110,9 @@ static drge_context* drge_create_context_cmdline(dr_cmdline cmdline)
         return NULL;
     }
 
+    memset(pContext, 0, sizeof(*pContext));
     pContext->cmdline  = cmdline;
-    pContext->pWindow  = NULL;
-    pContext->pTimer   = NULL;
-    pContext->pVFS     = NULL;
-    pContext->pLogFile = NULL;
 
-#ifndef DR_GE_DISABLE_EDITOR
-    pContext->pEditor  = NULL;
-#endif
 
 #ifdef DR_GE_PORTABLE
     pContext->isPortable = true;
@@ -132,15 +126,13 @@ static drge_context* drge_create_context_cmdline(dr_cmdline cmdline)
     // The file system. The lowest priority base path is always the directory containing the executable.
     pContext->pVFS = drvfs_create_context();
     if (pContext->pVFS == NULL) {
-        free(pContext);
-        return NULL;
+        goto on_error;
     }
 
     char executableDirPath[DRVFS_MAX_PATH];
     if (!dr_get_executable_path(executableDirPath, sizeof(executableDirPath))) {
         // This is actually a critical error because we need a reliable relative path to load assets and whatnot.
-        free(pContext);
-        return NULL;
+        goto on_error;
     }
 
     drvfs_add_base_directory(pContext->pVFS, drpath_base_path(executableDirPath));
@@ -155,7 +147,26 @@ static drge_context* drge_create_context_cmdline(dr_cmdline cmdline)
     drge_open_log_file(pContext);
 
 
+    // Graphics.
+    pContext->pVulkan = drvkCreateContext(NULL);
+    pContext->pGraphicsWorld = drge_create_graphics_world(pContext->pVulkan);
+
     return pContext;
+
+
+on_error:
+    drvkDeleteContext(pContext->pVulkan);
+
+    if (pContext->pLogFile) {
+        drvfs_close(pContext->pLogFile);
+    }
+
+    if (pContext->pVFS) {
+        drvfs_delete_context(pContext->pVFS);
+    }
+
+    free(pContext);
+    return NULL;
 }
 
 drge_context* drge_create_context(int argc, char** argv)

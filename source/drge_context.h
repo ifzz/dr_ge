@@ -1,8 +1,9 @@
 // Public domain. See "unlicense" statement at the end of dr_ge.h.
 
 typedef struct drge_window drge_window;
-typedef struct drge_timer  drge_timer;
+typedef struct drge_timer drge_timer;
 typedef struct drge_editor drge_editor;
+typedef struct drge_graphics_world drge_graphics_world;
 
 typedef struct drge_context drge_context;
 struct drge_context
@@ -25,6 +26,10 @@ struct drge_context
     drvfs_file* pLogFile;
 
 
+    // The dr_vulkan context that we'll use for rendering and compute.
+    drvk_context* pVulkan;
+
+
 #ifndef DR_GE_DISABLE_EDITOR
     // A pointer to the object representing the editor.
     drge_editor* pEditor;
@@ -45,6 +50,13 @@ struct drge_context
 
     // The game name. This is loaded from the config and used as the window title.
     char name[64];
+
+
+
+
+
+    //// TEMP ////
+    drge_graphics_world* pGraphicsWorld;
 };
 
 

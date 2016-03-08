@@ -90,7 +90,7 @@ drge_asset* drge__load_image_asset_from_file(drge_context* pContext, drvfs_file*
 
     pImageAsset->width  = imageWidth;
     pImageAsset->height = imageHeight;
-    pImageAsset->format = drge_image_format_rgba8;
+    pImageAsset->format = VK_FORMAT_R8G8B8A8_UNORM;
     memcpy(pImageAsset->pImageData, pImageData, imageDataSize);
 
     stbi_image_free(pImageData);
