@@ -38,11 +38,11 @@ drge_asset_type drge_get_asset_type_from_path(const char* path)
 
 int drge__stbi_read(void* user, char *data, int size)
 {
-    drvfs_file* pFile = user;
+    drfs_file* pFile = user;
     assert(pFile != NULL);
 
     size_t bytesRead;
-    if (drvfs_read(pFile, data, (size_t)size, &bytesRead) == drvfs_success) {
+    if (drfs_read(pFile, data, (size_t)size, &bytesRead) == drfs_success) {
         return (int)bytesRead;
     }
 
@@ -51,21 +51,21 @@ int drge__stbi_read(void* user, char *data, int size)
 
 void drge__stbi_skip(void* user, int n)
 {
-    drvfs_file* pFile = user;
+    drfs_file* pFile = user;
     assert(pFile != NULL);
 
-    drvfs_seek(pFile, n, drvfs_origin_current);
+    drfs_seek(pFile, n, drfs_origin_current);
 }
 
 int drge__stbi_eof(void* user)
 {
-    drvfs_file* pFile = user;
+    drfs_file* pFile = user;
     assert(pFile != NULL);
 
-    return drvfs_eof(pFile);
+    return drfs_eof(pFile);
 }
 
-drge_asset* drge__load_image_asset_from_file(drge_context* pContext, drvfs_file* pFile, const char* path)
+drge_asset* drge__load_image_asset_from_file(drge_context* pContext, drfs_file* pFile, const char* path)
 {
     (void)path;
 
@@ -115,7 +115,7 @@ void drge__unload_image_asset(drge_asset* pAsset)
 }
 
 
-drge_asset* drge__load_model_asset_from_file(drge_context* pContext, drvfs_file* pFile, const char* path)
+drge_asset* drge__load_model_asset_from_file(drge_context* pContext, drfs_file* pFile, const char* path)
 {
     (void)path;
 
@@ -177,13 +177,13 @@ drge_asset* drge_load_asset(drge_context* pContext, const char* path)
         return pExistingAsset;
     }
 
-    drvfs_file_info fi;
-    if (drvfs_get_file_info(pContext->pVFS, path, &fi) != drvfs_success) {
+    drfs_file_info fi;
+    if (drfs_get_file_info(pContext->pVFS, path, &fi) != drfs_success) {
         return NULL;    // File doesn't exist.
     }
 
-    drvfs_file* pFile;
-    if (drvfs_open(pContext->pVFS, path, DRVFS_READ, &pFile) != drvfs_success) {
+    drfs_file* pFile;
+    if (drfs_open(pContext->pVFS, path, DRFS_READ, &pFile) != drfs_success) {
         return NULL;
     }
 
@@ -205,7 +205,7 @@ drge_asset* drge_load_asset(drge_context* pContext, const char* path)
     }
 
 
-    drvfs_close(pFile);
+    drfs_close(pFile);
     if (pAsset == NULL) {
         return NULL;
     }

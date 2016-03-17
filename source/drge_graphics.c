@@ -1,5 +1,62 @@
 // Public domain. See "unlicense" statement at the end of dr_ge.h.
 
+static VkResult drge_graphics_world__resize_host_transfer_buffer(drge_graphics_world* pWorld, VkDeviceSize newSize)
+{
+    assert(pWorld != NULL);
+
+    if (pWorld->hostTransferBufferSize == newSize) {
+        return VK_SUCCESS;  // The new size is the same as the old one. No need to change anything.
+    }
+
+
+
+    pWorld->hostTransferBufferSize = newSize;
+
+    if (pWorld->hostTransferBuffer) {
+        vkDestroyBuffer(pWorld->primaryDevice, pWorld->hostTransferBuffer, NULL);
+        pWorld->hostTransferBuffer = NULL;
+    }
+
+    if (pWorld->hostTransferMemory) {
+        vkFreeMemory(pWorld->primaryDevice, pWorld->hostTransferMemory, NULL);
+        pWorld->hostTransferMemory = NULL;
+    }
+
+
+
+    VkBufferCreateInfo hostTransferBufferInfo;
+    hostTransferBufferInfo.sType                 = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    hostTransferBufferInfo.pNext                 = NULL;
+    hostTransferBufferInfo.flags                 = 0;
+    hostTransferBufferInfo.usage                 = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    hostTransferBufferInfo.size                  = 2048*2048*4;
+    hostTransferBufferInfo.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
+    hostTransferBufferInfo.queueFamilyIndexCount = 0;
+    hostTransferBufferInfo.pQueueFamilyIndices   = NULL;
+    VkResult result = vkCreateBuffer(pWorld->primaryDevice, &hostTransferBufferInfo, NULL, &pWorld->hostTransferBuffer);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    VkMemoryAllocateInfo hostTransferMemoryAllocInfo;
+    hostTransferMemoryAllocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    hostTransferMemoryAllocInfo.pNext           = NULL;
+    hostTransferMemoryAllocInfo.allocationSize  = hostTransferBufferInfo.size;
+    hostTransferMemoryAllocInfo.memoryTypeIndex = drvkGetMemoryTypeIndex(pWorld->pVulkan, pWorld->primaryDeviceIndex, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    result = vkAllocateMemory(pWorld->primaryDevice, &hostTransferMemoryAllocInfo, NULL, &pWorld->hostTransferMemory);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    result = vkBindBufferMemory(pWorld->primaryDevice, pWorld->hostTransferBuffer, pWorld->hostTransferMemory, 0);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+
+    return result;
+}
+
 drge_graphics_world* drge_create_graphics_world(drvk_context* pVulkan)
 {
     if (pVulkan == NULL) {
@@ -31,11 +88,25 @@ drge_graphics_world* drge_create_graphics_world(drvk_context* pVulkan)
     bufferAllocInfo.commandBufferCount = 1;
     bufferAllocInfo.commandPool        = pWorld->pResourceQueue->commandPool;
     bufferAllocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    result = vkAllocateCommandBuffers(drvkGetDevice(pVulkan, 0), &bufferAllocInfo, &pWorld->resourceCmdBuffer);
+    result = vkAllocateCommandBuffers(pWorld->primaryDevice, &bufferAllocInfo, &pWorld->resourceCmdBuffer);
     if (result != VK_SUCCESS) {
         free(pWorld);
         return NULL;
     }
+
+
+    // The buffer for transferring data between Vulkan and the host.
+    pWorld->hostTransferBuffer = NULL;
+    pWorld->hostTransferMemory = NULL;
+    pWorld->hostTransferBufferSize = 0;
+    result = drge_graphics_world__resize_host_transfer_buffer(pWorld, 2048*2048*4);
+    if (result != VK_SUCCESS) {
+        free(pWorld);
+        return NULL;
+    }
+
+    
+
 
     
 
@@ -415,8 +486,9 @@ drge_graphics_resource* drge_graphics_world_create_texture_resource(drge_graphic
     }
 
 
-    // Copy image data if applicable.
-    if (pInfo->pData != NULL)
+    // Copy image data if applicable. Here is where we'll create the proxy image that we use for transferring data to and from the main image. The
+    // proxy image uses linear tiling.
+    if (pInfo->pData != NULL || (pInfo->usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT))
     {
         // TODO: Implement Me.
     }
@@ -442,6 +514,7 @@ drge_graphics_resource* drge_graphics_world_create_texture_resource(drge_graphic
     }
 
 
+
     // Everything should be good at this point.
     drge_graphics_texture_resource* pTextureResource = malloc(sizeof(*pTextureResource));
     if (pTextureResource == NULL) {
@@ -457,6 +530,7 @@ drge_graphics_resource* drge_graphics_world_create_texture_resource(drge_graphic
     pTextureResource->info.pData  = NULL;    // <-- Set this to null for safety since it's likely the caller will free the memory later.
 
     return (drge_graphics_resource*)pTextureResource;
+
 
 on_error:
     if (imageView) {
@@ -499,15 +573,22 @@ size_t drge_graphics_world_get_texture_data(drge_graphics_resource* pResource, v
         return 0;
     }
 
-    VkMemoryRequirements memReqs;
-    vkGetImageMemoryRequirements(drvkGetDevice(pResource->pWorld->pVulkan, 0), pTextureResource->image, &memReqs);
+    
+    size_t dataSizeInBytes = drvkCalculateTightlyPackedImageSize(pTextureResource->info.width, pTextureResource->info.height, pTextureResource->info.depth, pTextureResource->info.format);
 
-    if (pDataOut)
+    //VkMemoryRequirements memReqs;
+    //vkGetImageMemoryRequirements(pResource->pWorld->primaryDevice, pTextureResource->proxyImage, &memReqs);
+
+    if (pDataOut && dataSizeInBytes > 0)
     {
-        
+        for (size_t i = 0; i < dataSizeInBytes; ++i) {
+            ((char*)pDataOut)[i] = 0xFF;
+        }
     }
 
-    return memReqs.size;
+    return dataSizeInBytes;
+
+    //return memReqs.size;
 }
 
 

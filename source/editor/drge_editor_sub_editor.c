@@ -6,7 +6,7 @@ typedef struct
     drge_editor* pEditor;
 
     // The path of the file the sub-editor is linked to. Can be an empty string in which case it is assumed to be free-floating.
-    char fileAbsolutePath[DRVFS_MAX_PATH];
+    char fileAbsolutePath[DRFS_MAX_PATH];
 
 
     // The function to call when the sub-editor needs to be saved.
@@ -188,9 +188,9 @@ bool drge_subeditor_is_read_only(drge_subeditor* pSubEditor)
         return false;
     }
 
-    drvfs_file_info fi;
-    if (drvfs_get_file_info(drge_subeditor_get_editor(pSubEditor)->pContext->pVFS, absolutePath, &fi) == drvfs_success) {
-        return (fi.attributes & DRVFS_FILE_ATTRIBUTE_READONLY) != 0;
+    drfs_file_info fi;
+    if (drfs_get_file_info(drge_subeditor_get_editor(pSubEditor)->pContext->pVFS, absolutePath, &fi) == drfs_success) {
+        return (fi.attributes & DRFS_FILE_ATTRIBUTE_READONLY) != 0;
     }
 
     return false;

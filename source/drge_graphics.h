@@ -97,12 +97,6 @@ struct drge_graphics_texture_resource
 
     // The information that was used to create the texture. This is mainly for informational purposes.
     drge_graphics_texture_info info;
-
-
-    // TEMP. This section contains the proxy image that's used to pass the image data back to the host. This is temporary and
-    // will be replaced with a much more memory-efficient implementation.
-    VkImage proxyImage;
-    VkDeviceMemory proxyImageMemory;
 };
 
 struct drge_graphics_material_resource
@@ -133,6 +127,15 @@ struct drge_graphics_world
     // The command buffer we'll use for resource management.
     VkCommandBuffer resourceCmdBuffer;
 
+
+    // The buffer object we use for the transferring data between Vulkan and the host.
+    VkBuffer hostTransferBuffer;
+
+    // The backing memory for the buffer used for transferring data between Vulkan and the host. This memory is expanded as required, but never shrunk.
+    VkDeviceMemory hostTransferMemory;
+
+    // The size in bytes of the host transfer memory.
+    VkDeviceSize hostTransferBufferSize;
 
 
     // TEMP. Everything below is just for testing and getting the basics working.

@@ -12,7 +12,7 @@ static void drge_load_default_config(drge_context* pContext)
 typedef struct
 {
     drge_context* pContext;
-    drvfs_file* pConfigFile;
+    drfs_file* pConfigFile;
 } drge_load_config_data;
 
 static size_t drge_load_config_read(void* pUserData, void* pDataOut, size_t bytesToRead)
@@ -21,7 +21,7 @@ static size_t drge_load_config_read(void* pUserData, void* pDataOut, size_t byte
     assert(pData != NULL);
 
     size_t bytesRead;
-    drvfs_read(pData->pConfigFile, pDataOut, bytesToRead, &bytesRead);
+    drfs_read(pData->pConfigFile, pDataOut, bytesToRead, &bytesRead);
 
     return bytesRead;
 }
@@ -42,13 +42,13 @@ static void drge_load_config_pair(void* pUserData, const char* key, const char* 
     {
         // Base directories are listed in order of priority, but important to remember that the executable's directory must always
         // be the lowest priority base directory. Therefore we always add the base directory to the second last position.
-        drvfs_context* pVFS = drge_get_vfs(pContext);
-        assert(drvfs_get_base_directory_count(pVFS) > 0);
+        drfs_context* pVFS = drge_get_vfs(pContext);
+        assert(drfs_get_base_directory_count(pVFS) > 0);
 
-        char absolutePath[DRVFS_MAX_PATH];
-        drpath_to_absolute(value, drvfs_get_base_directory_by_index(pVFS, drvfs_get_base_directory_count(pVFS) - 1), absolutePath, sizeof(absolutePath));
+        char absolutePath[DRFS_MAX_PATH];
+        drpath_to_absolute(value, drfs_get_base_directory_by_index(pVFS, drfs_get_base_directory_count(pVFS) - 1), absolutePath, sizeof(absolutePath));
 
-        drvfs_insert_base_directory(pVFS, absolutePath, drvfs_get_base_directory_count(pVFS) - 1);
+        drfs_insert_base_directory(pVFS, absolutePath, drfs_get_base_directory_count(pVFS) - 1);
         return;
     }
 }
@@ -70,8 +70,8 @@ static void drge_load_config(drge_context* pContext)
     // Load the default config first so we have default values for those that aren't specified in the config file.
     drge_load_default_config(pContext);
 
-    drvfs_file* pConfigFile;
-    if (drvfs_open(drge_get_vfs(pContext), "config.cfg", DRVFS_READ, &pConfigFile) != drvfs_success) {
+    drfs_file* pConfigFile;
+    if (drfs_open(drge_get_vfs(pContext), "config.cfg", DRFS_READ, &pConfigFile) != drfs_success) {
         return;
     }
 
@@ -80,7 +80,7 @@ static void drge_load_config(drge_context* pContext)
     data.pConfigFile = pConfigFile;
     dr_parse_key_value_pairs(drge_load_config_read, drge_load_config_pair, drge_load_config_error, &data);
 
-    drvfs_close(pConfigFile);
+    drfs_close(pConfigFile);
 }
 
 static void drge_open_log_file(drge_context* pContext)
@@ -93,12 +93,12 @@ static void drge_open_log_file(drge_context* pContext)
         return; // Already open.
     }
 
-    char logPath[DRVFS_MAX_PATH];
+    char logPath[DRFS_MAX_PATH];
     drge_get_log_file_folder_path(pContext, logPath, sizeof(logPath));
     drpath_append(logPath, sizeof(logPath), "dr_log.log");
 
     pContext->pLogFile;
-    drvfs_open(drge_get_vfs(pContext), logPath, DRVFS_WRITE | DRVFS_TRUNCATE | DRVFS_CREATE_DIRS, &pContext->pLogFile);
+    drfs_open(drge_get_vfs(pContext), logPath, DRFS_WRITE | DRFS_TRUNCATE | DRFS_CREATE_DIRS, &pContext->pLogFile);
 }
 
 static drge_context* drge_create_context_cmdline(dr_cmdline cmdline)
@@ -124,18 +124,18 @@ static drge_context* drge_create_context_cmdline(dr_cmdline cmdline)
 
 
     // The file system. The lowest priority base path is always the directory containing the executable.
-    pContext->pVFS = drvfs_create_context();
+    pContext->pVFS = drfs_create_context();
     if (pContext->pVFS == NULL) {
         goto on_error;
     }
 
-    char executableDirPath[DRVFS_MAX_PATH];
+    char executableDirPath[DRFS_MAX_PATH];
     if (!dr_get_executable_path(executableDirPath, sizeof(executableDirPath))) {
         // This is actually a critical error because we need a reliable relative path to load assets and whatnot.
         goto on_error;
     }
 
-    drvfs_add_base_directory(pContext->pVFS, drpath_base_path(executableDirPath));
+    drfs_add_base_directory(pContext->pVFS, drpath_base_path(executableDirPath));
 
 
     // The config file. This needs to be done after initializing the file system so we can load the file. Needs to come
@@ -158,11 +158,11 @@ on_error:
     drvkDeleteContext(pContext->pVulkan);
 
     if (pContext->pLogFile) {
-        drvfs_close(pContext->pLogFile);
+        drfs_close(pContext->pLogFile);
     }
 
     if (pContext->pVFS) {
-        drvfs_delete_context(pContext->pVFS);
+        drfs_delete_context(pContext->pVFS);
     }
 
     free(pContext);
@@ -191,8 +191,8 @@ void drge_delete_context(drge_context* pContext)
         return;
     }
 
-    drvfs_close(pContext->pLogFile);
-    drvfs_delete_context(pContext->pVFS);
+    drfs_close(pContext->pLogFile);
+    drfs_delete_context(pContext->pVFS);
     free(pContext);
 
     drge_uninit_window_system();
@@ -345,7 +345,7 @@ void drge_render(drge_context* pContext)
 }
 
 
-drvfs_context* drge_get_vfs(drge_context* pContext)
+drfs_context* drge_get_vfs(drge_context* pContext)
 {
     if (pContext == NULL) {
         return NULL;
@@ -376,11 +376,11 @@ void drge_log(drge_context* pContext, const char* message)
         char dateTime[64];
         dr_datetime_short(dr_now(), dateTime, sizeof(dateTime));
 
-        drvfs_write_string(pContext->pLogFile, "[");
-        drvfs_write_string(pContext->pLogFile, dateTime);
-        drvfs_write_string(pContext->pLogFile, "]");
-        drvfs_write_line  (pContext->pLogFile, message);
-        drvfs_flush(pContext->pLogFile);
+        drfs_write_string(pContext->pLogFile, "[");
+        drfs_write_string(pContext->pLogFile, dateTime);
+        drfs_write_string(pContext->pLogFile, "]");
+        drfs_write_line  (pContext->pLogFile, message);
+        drfs_flush(pContext->pLogFile);
     }
 
 
@@ -466,7 +466,7 @@ void drge_get_log_file_folder_path(drge_context* pContext, char* pathOut, size_t
     }
     else
     {
-        char logFolderPath[DRVFS_MAX_PATH];
+        char logFolderPath[DRFS_MAX_PATH];
         if (dr_get_log_folder_path(logFolderPath, sizeof(logFolderPath)))
         {
             // We found the log folder path.

@@ -22,7 +22,7 @@ typedef struct
     drge_asset_type type; \
     drge_context* pContext; \
     unsigned int referenceCount; \
-    char absolutePath[DRVFS_MAX_PATH];
+    char absolutePath[DRFS_MAX_PATH];
 
     DRGE_BASE_ASSET_ATTRIBS
 } drge_asset;

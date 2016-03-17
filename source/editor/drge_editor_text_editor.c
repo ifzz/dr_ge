@@ -99,7 +99,7 @@ static bool drge_text_editor__save(drge_subeditor* pTextEditor, const char* abso
     char* pText = malloc(textSize + 1); // +1 for null terminator.
     drgui_textbox_get_text(pTEData->pTextBox, pText, textSize + 1);
 
-    bool wasSuccessful = drvfs_open_and_write_text_file(drge_subeditor_get_editor(pTextEditor)->pContext->pVFS, absolutePathToSaveAs, pText);
+    bool wasSuccessful = drfs_open_and_write_text_file(drge_subeditor_get_editor(pTextEditor)->pContext->pVFS, absolutePathToSaveAs, pText);
     if (wasSuccessful) {
         pTEData->iUndoPointAtLastSave = drgui_textbox_get_undo_points_remaining_count(pTEData->pTextBox);
     }
@@ -177,10 +177,10 @@ drge_subeditor* drge_editor_create_text_editor(drge_editor* pEditor, const char*
     drgui_textbox_set_active_line_background_color(pTEData->pTextBox, drgui_rgb(40, 40, 40));
     drgui_textbox_set_border_width(pTEData->pTextBox, 0);
 
-    char* fileData = drvfs_open_and_read_text_file(pEditor->pContext->pVFS, fileAbsolutePath, NULL);
+    char* fileData = drfs_open_and_read_text_file(pEditor->pContext->pVFS, fileAbsolutePath, NULL);
     drgui_textbox_set_text(pTEData->pTextBox, fileData);
 
-    drvfs_free(fileData);
+    drfs_free(fileData);
     return pTextEditor;
 }
 

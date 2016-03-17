@@ -4,8 +4,8 @@
 drge_subeditor* drge_editor__create_sub_editor_by_type(drge_editor* pEditor, const char* filePath, drge_asset_type type)
 {
     // Sub-editors expect the file path to be absolute. We'll need to handle that.
-    char absolutePath[DRVFS_MAX_PATH];
-    if (!drvfs_find_absolute_path(pEditor->pContext->pVFS, filePath, absolutePath, sizeof(absolutePath))) {
+    char absolutePath[DRFS_MAX_PATH];
+    if (!drfs_find_absolute_path(pEditor->pContext->pVFS, filePath, absolutePath, sizeof(absolutePath))) {
         drge_errorf(pEditor->pContext, "Failed to find absolute path of \"%s\". Check that the file exists.", filePath);
         return NULL;
     }
@@ -633,8 +633,8 @@ bool drge_editor_try_focus_file_by_path(drge_editor* pEditor, const char* filePa
         return false;
     }
 
-    char absolutePath[DRVFS_MAX_PATH];
-    if (!drvfs_find_absolute_path(pEditor->pContext->pVFS, filePath, absolutePath, sizeof(absolutePath))) {
+    char absolutePath[DRFS_MAX_PATH];
+    if (!drfs_find_absolute_path(pEditor->pContext->pVFS, filePath, absolutePath, sizeof(absolutePath))) {
         return false;
     }
 

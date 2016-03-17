@@ -20,10 +20,10 @@ struct drge_context
     drge_timer* pTimer;
 
     // The file system context we'll use for loading all files.
-    drvfs_context* pVFS;
+    drfs_context* pVFS;
 
     // The log file.
-    drvfs_file* pLogFile;
+    drfs_file* pLogFile;
 
 
     // The dr_vulkan context that we'll use for rendering and compute.
@@ -116,7 +116,7 @@ void drge_render(drge_context* pContext);
 
 
 // Retrieves a pointer to the object representing the file system of the given context.
-drvfs_context* drge_get_vfs(drge_context* pContext);
+drfs_context* drge_get_vfs(drge_context* pContext);
 
 // Determines whether or not the game is running in portable mode.
 bool drge_is_portable(drge_context* pContext);
