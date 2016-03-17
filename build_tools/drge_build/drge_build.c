@@ -1,12 +1,12 @@
 
 #define DR_UTIL_IMPLEMENTATION
-#include "../../source/external/dr_util.h"
+#include "../../dr_libs/dr_util.h"
 
 #define DR_PATH_IMPLEMENTATION
-#include "../../source/external/dr_path.h"
+#include "../../dr_libs/dr_path.h"
 
-#define DR_VFS_IMPLEMENTATION
-#include "../../source/external/dr_vfs.h"
+#define DR_FS_IMPLEMENTATION
+#include "../../dr_libs/dr_fs.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -57,7 +57,7 @@ typedef struct
 
     /// The virtual file system we'll be using to open and copy files. There is only a single base directory added to this context
     /// which is the directory that contains this executable.
-    drvfs_context* pVFS;
+    drfs_context* pVFS;
 
 
 } drge_build_context;
@@ -82,11 +82,11 @@ void copy_and_log_file(drge_build_context* pContext, const char* srcPath, const 
     assert(dstPath != NULL);
 
     // Make sure the directory exists.
-    char dstPathDir[DRVFS_MAX_PATH];
+    char dstPathDir[DRFS_MAX_PATH];
     drpath_copy_base_path(dstPath, dstPathDir, sizeof(dstPathDir));
-    drvfs_create_directory(pContext->pVFS, dstPathDir);
+    drfs_create_directory(pContext->pVFS, dstPathDir);
 
-    if (drvfs_copy_file(pContext->pVFS, srcPath, dstPath, false) == drvfs_success) {
+    if (drfs_copy_file(pContext->pVFS, srcPath, dstPath, false) == drfs_success) {
         printf("  Copied file %s to %s\n", srcPath, dstPath);
     } else {
         printf("  ERROR: Failed to copy %s to %s\n", srcPath, dstPath);
@@ -107,7 +107,7 @@ void prebuild(drge_build_context* pContext)
         copy_and_log_file(pContext, "../../dr_libs/dr_2d.h", "../source/external/dr_2d.h");
         copy_and_log_file(pContext, "../../dr_libs/dr_mtl.h", "../source/external/dr_mtl.h");
         copy_and_log_file(pContext, "../../dr_libs/dr_fsw.h", "../source/external/dr_fsw.h");
-        copy_and_log_file(pContext, "../../dr_libs/dr_vfs.h", "../source/external/dr_vfs.h");
+        copy_and_log_file(pContext, "../../dr_libs/dr_fs.h", "../source/external/dr_fs.h");
         copy_and_log_file(pContext, "../../dr_libs/dr_gui.h", "../source/external/dr_gui.h");
         copy_and_log_file(pContext, "../../dr_libs/dr_math.h", "../source/external/dr_math.h");
         copy_and_log_file(pContext, "../../dr_libs/dr_path.h", "../source/external/dr_path.h");
@@ -118,18 +118,18 @@ void prebuild(drge_build_context* pContext)
         copy_and_log_file(pContext, "../../dr_appkit/dr_appkit.h", "../source/external/dr_appkit/dr_appkit.h");
         copy_and_log_file(pContext, "../../dr_appkit/dr_appkit.c", "../source/external/dr_appkit/dr_appkit.c");
 
-        drvfs_iterator i;
-        if (drvfs_begin(pContext->pVFS, "../../dr_appkit/source", &i))
+        drfs_iterator i;
+        if (drfs_begin(pContext->pVFS, "../../dr_appkit/source", &i))
         {
             do
             {
-                char relativePathSrc[DRVFS_MAX_PATH];
-                char relativePathDst[DRVFS_MAX_PATH];
+                char relativePathSrc[DRFS_MAX_PATH];
+                char relativePathDst[DRFS_MAX_PATH];
                 drpath_copy_and_append(relativePathSrc, sizeof(relativePathSrc), "../../dr_appkit/source", drpath_file_name(i.info.absolutePath));
                 drpath_copy_and_append(relativePathDst, sizeof(relativePathDst), "../source/external/dr_appkit/source", drpath_file_name(i.info.absolutePath));
 
                 copy_and_log_file(pContext, relativePathSrc, relativePathDst);
-            } while (drvfs_next(pContext->pVFS, &i));
+            } while (drfs_next(pContext->pVFS, &i));
         }
 
         // dr_gui WIP.
@@ -205,12 +205,12 @@ bool on_cmdline(const char* key, const char* value, void* pUserData)
 
     if (strcmp(key, "[path]") == 0)
     {
-        char basedir[DRVFS_MAX_PATH];
+        char basedir[DRFS_MAX_PATH];
         drpath_copy_base_path(value, basedir, sizeof(basedir));
 
         if (drpath_is_relative(basedir))
         {
-            char cwd[DRVFS_MAX_PATH];
+            char cwd[DRFS_MAX_PATH];
 #ifdef _WIN32
             if (_getcwd(cwd, sizeof(cwd)) == NULL)
 #else
@@ -228,12 +228,12 @@ bool on_cmdline(const char* key, const char* value, void* pUserData)
 
 
         // The base directory should be cleaned before adding it to the virtual file system, if only for sanity.
-        char basedirClean[DRVFS_MAX_PATH];
+        char basedirClean[DRFS_MAX_PATH];
         drpath_clean(basedir, basedirClean, sizeof(basedirClean));
 
         // We should have a valid base directory.
-        drvfs_add_base_directory(pContext->pVFS, basedirClean);
-        drvfs_set_base_write_directory(pContext->pVFS, basedirClean);
+        drfs_add_base_directory(pContext->pVFS, basedirClean);
+        drfs_set_base_write_directory(pContext->pVFS, basedirClean);
 
         printf("Working Directory: %s\n\n", basedirClean);
     }
@@ -326,7 +326,7 @@ int main(int argc, char** argv)
     context.doBuild      = true;
     context.compiler     = drge_compiler_none;
     context.target       = drge_target_none;
-    context.pVFS         = drvfs_create_context();
+    context.pVFS         = drfs_create_context();
     dr_parse_cmdline(&cmdline, on_cmdline, &context);
 
 
@@ -354,7 +354,7 @@ int main(int argc, char** argv)
 
 
     // Shutdown.
-    drvfs_delete_context(context.pVFS);
+    drfs_delete_context(context.pVFS);
 
     return result;
 }
